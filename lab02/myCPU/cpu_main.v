@@ -37,7 +37,7 @@ output      [31:0]   debug_wb_rf_wdata
 `define jal     6'b000011
 `define jr      6'b001000
 `define lui     6'b001111
-`define or      6'b100101
+`define or_     6'b100101
 `define sll     6'b000000
 `define slt     6'b101010
 `define slti    6'b001010   
@@ -53,6 +53,10 @@ wire [3 :0] Next_State;
 wire [4 :0] waddr,sa;
 wire [5 :0] Op, func;
 wire [31:0] sign_extend, sign_ext_2ls, CPU_A, CPU_B, rdata1, rdata2, wdata, Result, Next_PC, imm, Tempofsa, TempofPC, Next_PC_J;
+
+//接口
+assign inst_sram_addr = {14'b0,debug_wb_pc[19:2]}; //inst_ram地址宽度为18位,data_ram地址宽度为16位
+assign data_sram_addr = Address;
 
 //Wire Connection
 assign PCWriteCond      =           (State==4'd8);
@@ -83,7 +87,7 @@ assign ALUop            =           (
                                         (ALUOp==2'd1)?3'b110:
                                         (ALUOp==2'd0||ALUOp==2'd2)?3'b010:
                                         (func==`addu)?3'b010:
-                                        (func==`or)?3'b001:
+                                        (func==`or_)?3'b001:
                                         3'b111
                                     );
 assign Next_State[0]    =           (
@@ -132,8 +136,8 @@ assign CPU_B            =           (
                                         (ALUSrcB==2'd2)?sign_extend:
                                         sign_ext_2ls
                                     );
-assign MemRead = (State==4'd0||State==4'd3);
-assign MemWrite = (State==4'd5);
+assign data_sram_en = (State==4'd0||State==4'd3);
+assign data_sram_wen = {4{State==4'd5}};
 assign MemtoReg = (State==4'd4);
 assign wdata = (Op==`lui&&State==4'd12)?imm:((Op==`jal&&State==4'd11)?TempofPC:((MemtoReg)?MDR:ALUOut));
 assign Next_PC = (PCSource==2'd0)?Result:((PCSource==2'd1)?ALUOut:Next_PC_J);
@@ -143,7 +147,96 @@ assign inst_sram_wen = 4'd0;
 assign inst_sram_wdata = 32'd0;
 assign inst_sram_en = (State==4'd0);
 
-
+//状态变化   
+always@(posedge clk)
+//复位
+if(resetn)
+begin
+State = 4'd0;
+debug_wb_pc = 32'hbfc00000;
+   end
+   else
+   case(State)
+   4'd0:
+   begin
+   if(IRWrite) TempofIns = inst_sram_rdata;
+   ALUOut = Result;
+   State = Next_State;
+   if(PCW) debug_wb_pc = Next_PC;
+   end
+   4'd1:
+   begin
+   A = rdata1;
+   B = rdata2;
+   ALUOut = Result;
+   State = Next_State;
+   end
+   4'd2:
+   begin
+   ALUOut = Result;
+   Address = ALUOut;
+   State = Next_State; 
+   end
+   4'd3:
+   begin
+   MDR = data_sram_rdata;
+   State = Next_State;
+   end
+   4'd4:
+   begin
+   State = Next_State;
+   end
+   4'd5:
+   begin
+   State = Next_State;
+   end
+   4'd6:
+   begin
+   ALUOut = Result;
+   State = Next_State;
+   end
+   4'd7:
+   begin
+   State = Next_State;
+   end
+   4'd8:
+   begin
+   State = Next_State;
+   if(PCW) debug_wb_pc = Next_PC;
+   end
+   4'd9:
+   begin
+   if(func!=`sll) ALUOut=Result;
+   else ALUOut=Tempofsa;
+   if(PCW)debug_wb_pc = A;
+   State = Next_State;
+   end
+   4'd10:
+   begin
+   State = Next_State;
+   end
+   4'd11:
+   begin
+   if(PCW) debug_wb_pc=Next_PC;
+   State = Next_State;
+   end
+   4'd12:
+   begin
+   State = Next_State;
+   end
+   4'd13:
+   begin
+   if(Op==`slti) ALUOut = Result;
+   else if(Op==`sltiu) ALUOut = CarryOut;
+   State = Next_State;
+   end
+   4'd14:
+   begin
+   State = Next_State;
+   end
+   default:
+   State = Next_State;
+   endcase
 
 //Connection with ALU and REG
 alu aluforcpu(
@@ -166,7 +259,5 @@ reg_file regforcpu(
 .rdata1     (rdata1             ),
 .rdata2     (debug_wb_rf_wdata  )
 );
-
-
 
 endmodule
