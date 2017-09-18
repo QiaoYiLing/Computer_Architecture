@@ -44,7 +44,7 @@ output      [31:0]   debug_wb_rf_wdata
 `define sltiu   6'b001011
 
 //CPU Def
-reg  [3 :0] State;
+reg  [3 :0] State, TMPofNS;
 reg  [31:0] Address, PC, MDR, TempofIns, A, B, ALUOut;
 wire        PCWriteCond, PCWrite, MemtoReg, IRWrite, RegDst, RegWrite, ALUSrcA, Zero, PCW, CarryOut;
 wire [1 :0] ALUSrcB, ALUOp, PCSource;
@@ -52,7 +52,7 @@ wire [2 :0] ALUop;
 wire [3 :0] Next_State;
 wire [4 :0] waddr,sa;
 wire [5 :0] Op, func;
-wire [31:0] sign_extend, sign_ext_2ls, CPU_A, CPU_B,wdata, rdata1, rdata2,Result, Next_PC, imm, Tempofsa, TempofPC, Next_PC_J;
+wire [31:0] sign_extend, sign_ext_2ls, CPU_A, CPU_B,wdata, rdata1,rdata2,Result, Next_PC, imm, Tempofsa, TempofPC, Next_PC_J;
 //Address
 assign inst_sram_addr   =           PC;
 assign data_sram_addr   =           Address;
@@ -172,6 +172,12 @@ begin
 if(IRWrite)
 TempofIns           <=          inst_sram_rdata;
 ALUOut              <=          Result;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
 State               <=          Next_State;
 if(PCW)
 PC                  <=          Next_PC;
@@ -181,73 +187,174 @@ begin
 A                   <=          rdata1;
 B                   <=          rdata2;
 ALUOut              <=          Result;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
 State               <=          Next_State;
 end
 4'd2:
 begin
-ALUOut = Result;
-Address = ALUOut;
-State = Next_State;
+ALUOut              <=          Result;
+Address             <=          ALUOut;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd3:
 begin
-MDR = data_sram_rdata;
-State = Next_State;
+MDR                 <=          data_sram_rdata;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd4:
 begin
-State = Next_State;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd5:
 begin
-State = Next_State;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd6:
 begin
-ALUOut = Result;
-State = Next_State;
+ALUOut              <=          Result;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd7:
 begin
-State = Next_State;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd8:
 begin
-State = Next_State;
-if(PCW) PC = Next_PC;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
+if(PCW)
+PC                  <=          Next_PC;
 end
 4'd9:
 begin
-if(func!=`sll) ALUOut=Result;
-else ALUOut=Tempofsa;
-if(PCW)PC = A;
-State = Next_State;
+if(func!=`sll)
+ALUOut              <=          Result;
+else
+ALUOut              <=          Tempofsa;
+if(PCW)
+PC                  <=          A;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd10:
 begin
-State = Next_State;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd11:
 begin
-if(PCW) PC=Next_PC;
-State = Next_State;
+if(PCW)
+PC                  <=          Next_PC;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd12:
 begin
-State = Next_State;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd13:
 begin
-if(Op==`slti) ALUOut = Result;
-else if(Op==`sltiu) ALUOut = CarryOut;
-State = Next_State;
+if(Op==`slti)
+ALUOut              <=          Result;
+else if(Op==`sltiu)
+ALUOut              <=          CarryOut;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 end
 4'd14:
 begin
-State = Next_State;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
+end
+4'd15:
+begin
+State               <=          TMPofNS;
 end
 default:
-State = Next_State;
+if(Next_State==0||Next_State==3)
+begin
+TMPofNS             <=          Next_State;
+State               <=          4'd15;
+end
+else
+State               <=          Next_State;
 endcase
 //Connection with ALU and REG
 alu aluforcpu(
