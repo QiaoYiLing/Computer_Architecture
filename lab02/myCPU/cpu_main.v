@@ -45,7 +45,7 @@ output      [31:0]   debug_wb_rf_wdata
 
 //CPU Def
 reg  [3 :0] State, TMPofNS;
-reg  [31:0] Address, PC, MDR, TempofIns, A, B, ALUOut;
+reg  [31:0] Address, PC, MDR, TempofIns, A, B, ALUOut, PCforDebug;
 wire        PCWriteCond, PCWrite, MemtoReg, IRWrite, RegDst, RegWrite, ALUSrcA, Zero, PCW, CarryOut;
 wire [1 :0] ALUSrcB, ALUOp, PCSource;
 wire [2 :0] ALUop;
@@ -151,8 +151,9 @@ assign Next_PC          =           (
 //TEST Assign
 assign inst_sram_wen    =           4'd0;
 assign inst_sram_wdata  =           32'd0;
-assign inst_sram_en     =           (State==4'd0);
-assign debug_wb_pc      =           PC;
+assign inst_sram_en     =           1;
+assign data_sram_en     =           1;
+assign debug_wb_pc      =           PCforDebug;
 assign debug_wb_rf_wen  =           {4{RegWrite}};
 assign debug_wb_rf_wnum =           waddr;
 assign debug_wb_rf_wdata=           wdata;
@@ -169,16 +170,12 @@ else
 case(State)
 4'd0:
 begin
+PCforDebug          <=          PC;
 if(IRWrite)
 TempofIns           <=          inst_sram_rdata;
 ALUOut              <=          Result;
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 if(PCW)
 PC                  <=          Next_PC;
 end
@@ -187,87 +184,47 @@ begin
 A                   <=          rdata1;
 B                   <=          rdata2;
 ALUOut              <=          Result;
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd2:
 begin
 ALUOut              <=          Result;
 Address             <=          ALUOut;
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd3:
 begin
 MDR                 <=          data_sram_rdata;
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd4:
 begin
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd5:
 begin
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd6:
 begin
 ALUOut              <=          Result;
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd7:
 begin
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd8:
 begin
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 if(PCW)
 PC                  <=          Next_PC;
 end
@@ -279,45 +236,25 @@ else
 ALUOut              <=          Tempofsa;
 if(PCW)
 PC                  <=          A;
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd10:
 begin
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd11:
 begin
 if(PCW)
 PC                  <=          Next_PC;
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd12:
 begin
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd13:
 begin
@@ -325,36 +262,23 @@ if(Op==`slti)
 ALUOut              <=          Result;
 else if(Op==`sltiu)
 ALUOut              <=          CarryOut;
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd14:
 begin
-if(Next_State==0||Next_State==3)
-begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
-end
-else
-State               <=          Next_State;
 end
 4'd15:
 begin
 State               <=          TMPofNS;
 end
 default:
-if(Next_State==0||Next_State==3)
 begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
 end
-else
-State               <=          Next_State;
 endcase
 //Connection with ALU and REG
 alu aluforcpu(
