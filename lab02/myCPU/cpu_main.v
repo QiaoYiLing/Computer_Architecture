@@ -37,7 +37,7 @@ output      [31:0]   debug_wb_rf_wdata
 `define jal     6'b000011
 `define jr      6'b001000
 `define lui     6'b001111
-`define or      6'b100101
+`define or_     6'b100101
 `define sll     6'b000000
 `define slt     6'b101010
 `define slti    6'b001010   
@@ -86,7 +86,7 @@ assign ALUop            =           (
                                         (ALUOp==2'd1)?3'b110:
                                         (ALUOp==2'd0||ALUOp==2'd2)?3'b010:
                                         (func==`addu)?3'b010:
-                                        (func==`or)?3'b001:
+                                        (func==`or_)?3'b001:
                                         3'b111
                                     );
 assign Next_State[0]    =           (
@@ -94,7 +94,7 @@ assign Next_State[0]    =           (
                                         (State==4'd2&&(Op==`lw||Op==`sw))||
                                         (State==4'd6)||
                                         (State==4'd1&&(Op==`j||Op==`jal||Op==`slti||Op==`sltiu||Op==`nop))
-                                     );
+                                    );
 assign Next_State[1]    =           (
                                         (State==4'd1&&(Op==`lw||Op==`sw||Op==`addiu||Op==`j||Op==`jal))||
                                         (State==4'd2&&Op==`lw)||
@@ -225,7 +225,6 @@ State = Next_State;
 end
 4'd10:
 begin
-
 State = Next_State;
 end
 4'd11:
