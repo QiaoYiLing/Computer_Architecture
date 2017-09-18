@@ -46,7 +46,7 @@ output      [31:0]   debug_wb_rf_wdata
 //CPU Def
 reg  [3 :0] State, TMPofNS;
 reg  [31:0] Address, PC, MDR, TempofIns, A, B, ALUOut, PCforDebug, wdataforDebug;
-reg         RWforDebug;
+reg         RWforDebug, Address_change;
 wire        PCWriteCond, PCWrite, MemtoReg, IRWrite, RegDst, RegWrite, ALUSrcA, Zero, PCW, CarryOut;
 wire [1 :0] ALUSrcB, ALUOp, PCSource;
 wire [2 :0] ALUop;
@@ -56,7 +56,7 @@ wire [5 :0] Op, func;
 wire [31:0] sign_extend, sign_ext_2ls, CPU_A, CPU_B,wdata, rdata1,rdata2,Result, Next_PC, imm, Tempofsa, TempofPC, Next_PC_J;
 //Address
 assign inst_sram_addr   =           PC;
-assign data_sram_addr   =           Address;
+assign data_sram_addr   =           ALUOut;
 
 //Wire Connection
 assign PCWriteCond      =           (State==4'd8);
@@ -154,6 +154,7 @@ assign inst_sram_wen    =           4'd0;
 assign inst_sram_wdata  =           32'd0;
 assign inst_sram_en     =           1;
 assign data_sram_en     =           1;
+assign data_sram_wen    =           {4{(State==4'd5)}};
 assign debug_wb_pc      =           PCforDebug;
 assign debug_wb_rf_wen  =           {4{RegWrite}};
 assign debug_wb_rf_wnum =           waddr;
@@ -206,7 +207,7 @@ end
 4'd2:
 begin
 ALUOut              <=          Result;
-Address             <=          ALUOut;
+Address_change      <=          1;
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
 if(RegWrite==1&&TMPofNS==4'd0)
@@ -353,6 +354,8 @@ end
 end
 4'd15:
 begin
+if(Address_change)
+Address             <=          ALUOut;
 if(TMPofNS==0)
 wdataforDebug       <=          wdata;
 State               <=          TMPofNS;
