@@ -25,7 +25,7 @@ integer i;
 //write
 always @(posedge clk) //ÉÏÉıÑØ²Ù×÷
 begin
-if (rst) 
+if (!rst) 
 begin
 for (i=0;i<`DATA_WIDTH;i=i+1) temp[i] <= 0; //¸´Î»
 end

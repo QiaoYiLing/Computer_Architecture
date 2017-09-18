@@ -45,7 +45,8 @@ output      [31:0]   debug_wb_rf_wdata
 
 //CPU Def
 reg  [3 :0] State, TMPofNS;
-reg  [31:0] Address, PC, MDR, TempofIns, A, B, ALUOut, PCforDebug;
+reg  [31:0] Address, PC, MDR, TempofIns, A, B, ALUOut, PCforDebug, wdataforDebug;
+reg         RWforDebug;
 wire        PCWriteCond, PCWrite, MemtoReg, IRWrite, RegDst, RegWrite, ALUSrcA, Zero, PCW, CarryOut;
 wire [1 :0] ALUSrcB, ALUOp, PCSource;
 wire [2 :0] ALUop;
@@ -163,14 +164,19 @@ always@(posedge clk)
 //¸´Î»
 if(!resetn)
 begin
-State               <=          4'd0;
+State               <=          4'd15;
+TMPofNS             <=          4'd0;
 PC                  <=          32'hbfc00000;
+wdataforDebug       <=          32'b0;
+PCforDebug          <=          32'hbfc00000;
+RWforDebug          <=          0;
 end
 else
 case(State)
 4'd0:
 begin
 PCforDebug          <=          PC;
+RWforDebug          <=          1'b0;
 if(IRWrite)
 TempofIns           <=          inst_sram_rdata;
 ALUOut              <=          Result;
@@ -178,6 +184,11 @@ TMPofNS             <=          Next_State;
 State               <=          4'd15;
 if(PCW)
 PC                  <=          Next_PC;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd1:
 begin
@@ -186,6 +197,11 @@ B                   <=          rdata2;
 ALUOut              <=          Result;
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd2:
 begin
@@ -193,33 +209,63 @@ ALUOut              <=          Result;
 Address             <=          ALUOut;
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd3:
 begin
 MDR                 <=          data_sram_rdata;
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd4:
 begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd5:
 begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd6:
 begin
 ALUOut              <=          Result;
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd7:
 begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd8:
 begin
@@ -227,6 +273,11 @@ TMPofNS             <=          Next_State;
 State               <=          4'd15;
 if(PCW)
 PC                  <=          Next_PC;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd9:
 begin
@@ -238,11 +289,21 @@ if(PCW)
 PC                  <=          A;
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd10:
 begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd11:
 begin
@@ -250,11 +311,21 @@ if(PCW)
 PC                  <=          Next_PC;
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd12:
 begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd13:
 begin
@@ -264,20 +335,42 @@ else if(Op==`sltiu)
 ALUOut              <=          CarryOut;
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd14:
 begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 4'd15:
 begin
+if(TMPofNS==0)
+wdataforDebug       <=          wdata;
 State               <=          TMPofNS;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 default:
 begin
 TMPofNS             <=          Next_State;
 State               <=          4'd15;
+if(RegWrite==1&&TMPofNS==4'd0)
+begin
+wdataforDebug       <=          wdata;
+RWforDebug          <=          1;
+end
 end
 endcase
 //Connection with ALU and REG
