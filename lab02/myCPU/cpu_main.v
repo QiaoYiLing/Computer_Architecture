@@ -161,9 +161,9 @@ assign debug_wb_rf_wen  =           {4{RegWrite}};
 assign debug_wb_rf_wnum =           waddr;
 assign debug_wb_rf_wdata=           wdata;
 
-//×´Ì¬±ä»¯   
+//¡Á???¡À???   
 always@(posedge clk)
-//¸´Î»
+//????
 if(!resetn)
 begin
 State               <=          4'd15;
