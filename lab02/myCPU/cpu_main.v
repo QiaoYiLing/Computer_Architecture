@@ -155,6 +155,7 @@ assign inst_sram_wdata  =           32'd0;
 assign inst_sram_en     =           1;
 assign data_sram_en     =           1;
 assign data_sram_wen    =           {4{(State==4'd5)}};
+assign data_sram_wdata  =           rdata2;
 assign debug_wb_pc      =           PCforDebug;
 assign debug_wb_rf_wen  =           {4{RegWrite}};
 assign debug_wb_rf_wnum =           waddr;
