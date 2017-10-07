@@ -108,6 +108,7 @@ begin
     else if (pre_to_now_valid && now_allowin) begin 
 	wb_pc <= mem_pc;
 	wb_inst <= mem_inst;
+	end
 end
 `endif
 

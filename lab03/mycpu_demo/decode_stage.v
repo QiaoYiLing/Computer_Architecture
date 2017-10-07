@@ -56,7 +56,7 @@ module decode_stage(
     output wire [ 4:0] de_dest,         //reg num of dest operand, zero if no dest
     output wire [31:0] de_vsrc1,        //value of source operand 1
     output wire [31:0] de_vsrc2,        //value of source operand 2
-    output wire [31:0] de_st_value      //value stored to memory
+    output wire [31:0] de_st_value,      //value stored to memory
 
   `ifdef SIMU_DEBUG
    ,output reg  [31:0] de_pc,
@@ -72,18 +72,17 @@ module decode_stage(
 );
 
 //pipe_line
-wire               now_to_next_valid;
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
     
    
-wire Instruction = fe_inst;
-wire op_code = Instruction[31:26];
-wire func = Instruction[5:0];  
-wire immediate = Instruction[15:0];
+wire [31:0 ] Instruction = fe_inst;
+wire [5 :0 ] op_code = Instruction[31:26];
+wire [5 :0 ] func = Instruction[5:0];  
+wire [15:0 ]immediate = Instruction[15:0];
 wire sign_extend = {{16{immediate[15]}},immediate};  
-assign de_rf_raddr1 = Insturction[25:21];
-assign de_rf_raddr2 = Insturction[20:16];
+assign de_rf_raddr1 = Instruction[25:21];
+assign de_rf_raddr2 = Instruction[20:16];
     
 wire inst_addiu = (op_code==6'b001001                   );  //addiu
 wire inst_addu  = (op_code==6'b100001                   );  //addu
@@ -98,27 +97,28 @@ wire inst_jr    = (op_code==6'b000000 && func==6'b001000);   //jr
 wire inst_lui   = (op_code==6'b001111                   );  //lui
 wire inst_or    = (op_code==6'b000000 && func==6'b100101);  //or, nop
 wire inst_sll   = (op_code==6'b000000 && func==6'b000000);  //sll
-wire inst_slt   = (op_code==6'b000000 && func==6'b101010)； //slt
-wire inst_slti  = (op_code==6'b001010                   )；  //slti
-wire inst_sltiu = (op_code==6'b001011                   )；  //sltiu
+wire inst_slt   = (op_code==6'b000000 && func==6'b101010);
+wire inst_slti  = (op_code==6'b001010                   );
+wire inst_sltiu = (op_code==6'b001011                   );
+
 
 wire r_type     = inst_addu | inst_or | inst_slt;
 
 //judge_branch
 wire         de_pc_zero;
 wire [31:0 ] de_pc_slt;
-wire         de_br_is_br  = inst_bne && !de_pc_zero || inst_beq && de_pc_zero;
-wire         de_br_is_j   = inst_j || inst_jal;
-wire         de_br_is_jr  = inst_jr;
-wire         de_br_taken  = de_br_is_br || de_br_is_j || de_br_is_jr;
-wire [15:0 ] de_br_offset = Instruction[15:0];
-wire [25:0 ] de_br_index  = Instruction[25:0];
-wire [31:0 ] de_br_target = de_rf_rdata1;
+assign         de_br_is_br  = inst_bne && !de_pc_zero || inst_beq && de_pc_zero;
+assign         de_br_is_j   = inst_j || inst_jal;
+assign         de_br_is_jr  = inst_jr;
+assign         de_br_taken  = de_br_is_br || de_br_is_j || de_br_is_jr;
+assign         de_br_offset = Instruction[15:0];
+assign         de_br_index  = Instruction[25:0];
+assign         de_br_target = de_rf_rdata1;
 //de
 wire RegDst = r_type;
 wire ALUSrcB= inst_addiu|inst_lw|inst_sw|inst_slti|inst_sltiu;
 
-assign de_dest = reg_dst ? Instruction[20:16] : 
+assign de_dest = RegDst ? Instruction[20:16] : 
                  inst_jr ? 31 :
                  Instruction[15:11];
 assign de_vsrc1 = de_rf_rdata1;
@@ -182,6 +182,8 @@ begin
     else if (pre_to_now_valid && now_allowin) begin 
 	de_inst <= fe_inst;
 	de_pc   <= fe_pc;
+	end
 end
+`endif
 
 endmodule //decode_stage

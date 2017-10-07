@@ -50,10 +50,10 @@ module execute_stage(
     output wire        data_sram_en,
     output wire [ 3:0] data_sram_wen,
     output wire [31:0] data_sram_addr,
-    output wire [31:0] data_sram_wdata 
+    output wire [31:0] data_sram_wdata, 
 
   `ifdef SIMU_DEBUG
-   ,input  wire [31:0] de_pc,           //pc @decode_stage
+    input  wire [31:0] de_pc,           //pc @decode_stage
     input  wire [31:0] de_inst,         //instr code @decode_stage
     output reg  [31:0] exe_pc,          //pc @execute_stage
     output reg  [31:0] exe_inst,        //instr code @execute_stage
@@ -72,7 +72,6 @@ reg  [31:0] exe_vsrc1;
 reg  [31:0] exe_vsrc2;
 reg  [31:0] exe_st_value;
 //pipe_line
-wire               now_to_next_valid;
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
 //exe
@@ -94,14 +93,14 @@ begin
         exe_st_value <= 0;
         exe_vsrc1 <= 0;
         exe_vsrc2 <= 0;
-        exe_op   <= 0；
+        exe_op   <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
         exe_dest <= de_dest;
         exe_st_value <= de_st_value;
         exe_vsrc1 <= de_vsrc1;
         exe_vsrc2 <= de_vsrc2; 
-        exe_op <= de_out_op；
+        exe_op <= de_out_op;
     end
 end
 
@@ -135,6 +134,7 @@ begin
     else if (pre_to_now_valid && now_allowin) begin 
 	exe_pc <= de_pc;
 	exe_inst <= de_inst;
+	end
 end
 `endif
     

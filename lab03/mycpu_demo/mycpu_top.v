@@ -70,20 +70,23 @@ wire        de_br_is_jr;
 wire [15:0] de_br_offset;   
 wire [25:0] de_br_index;    
 wire [31:0] de_br_target;   
-wire [??:0] de_out_op;      
+wire [39:0] de_out_op;      
 wire [ 4:0] de_dest;         
 wire [31:0] de_vsrc1;        
 wire [31:0] de_vsrc2;        
 wire [31:0] de_st_value;
-wire [??:0] exe_out_op;
+wire [39:0] exe_out_op;
 wire [ 4:0] exe_dest;
 wire [31:0] exe_value;
-wire [??:0] mem_out_op;
+wire [39:0] mem_out_op;
 wire [ 4:0] mem_dest;
 wire [31:0] mem_value;
 wire        wb_rf_wen;
 wire [ 4:0] wb_rf_waddr;
 wire [31:0] wb_rf_wdata;
+wire [31:0] de_rf_rdata1;
+wire [31:0] de_rf_rdata2;
+
 
 `ifdef SIMU_DEBUG
 wire [31:0] de_pc;
@@ -196,15 +199,15 @@ decode_stage de_stage
     .de_dest        (de_dest        ), //O, 5 
     .de_vsrc1       (de_vsrc1       ), //O, 32
     .de_vsrc2       (de_vsrc2       ), //O, 32
-    .de_st_value    (de_st_value    )  //O, 32
+    .de_st_value    (de_st_value    ),  //O, 32
 
   `ifdef SIMU_DEBUG
-   ,.de_pc          (de_pc          ), //O, 32
-    .de_inst        (de_inst        )  //O, 32 
+    .de_pc          (de_pc          ), //O, 32
+    .de_inst        (de_inst        ),  //O, 32 
   `endif
     
     .now_allowin    (de_allowin     ), //O, 1
-    .next_allowin   (exe_allowin    )  //I, 1
+    .next_allowin   (exe_allowin    ),  //I, 1
     .pre_to_now_valid (fe_to_de_valid), //I, 1
     .now_to_next_valid(de_to_exe_valid),  //O, 1
     .now_valid        (de_valid),       //O, 1
@@ -230,17 +233,17 @@ execute_stage exe_stage
     .data_sram_en   (data_sram_en   ), //O, 1
     .data_sram_wen  (data_sram_wen  ), //O, 4
     .data_sram_addr (de_to_exe_valid), //O, 32
-    .data_sram_wdata(exe_to_mem_valid)  //O, 32
+    .data_sram_wdata(exe_to_mem_valid),  //O, 32
 
   `ifdef SIMU_DEBUG
-   ,.de_pc          (de_pc          ), //I, 32
+    .de_pc          (de_pc          ), //I, 32
     .de_inst        (de_inst        ), //I, 32
     .exe_pc         (exe_pc         ), //O, 32
-    .exe_inst       (exe_inst       )  //O, 32
+    .exe_inst       (exe_inst       ),  //O, 32
   `endif
     
     .now_allowin    (exe_allowin    ), //O, 1
-    .next_allowin   (mem_allowin    )  //I, 1
+    .next_allowin   (mem_allowin    ),  //I, 1
     .pre_to_now_valid (exe_to_mem_valid), //I, 1
     .now_to_next_valid(mem_to_wb_valid),  //O, 1
     .now_valid        (exe_valid),       //O, 1
@@ -261,20 +264,19 @@ memory_stage mem_stage
                                     
     .mem_out_op     (mem_out_op     ), //O, ??
     .mem_dest       (mem_dest       ), //O, 5
-    .mem_value      (mem_value      )  //O, 32
+    .mem_value      (mem_value      ),  //O, 32
 
   `ifdef SIMU_DEBUG
-   ,.exe_pc         (exe_pc         ), //I, 32
+    .exe_pc         (exe_pc         ), //I, 32
     .exe_inst       (exe_inst       ), //I, 32
     .mem_pc         (mem_pc         ), //O, 32
     .mem_inst       (mem_inst       ),  //O, 1
-    .now_valid        (mem_valid)
   `endif
-    
+  
+    .next_allowin   (wb_allowin     ),  //I, 1
     .now_allowin    (mem_allowin    ), //O, 1
-    .next_allowin   (wb_allowin     )  //I, 1
     .pre_to_now_valid (exe_to_mem_valid), //I, 1
-    .now_to_next_valid(mem_to_wb_valid)  //O, 1
+    .now_to_next_valid(mem_to_wb_valid),  //O, 1
     .now_valid        (mem_valid),       //O, 1
     .now_ready_go     (mem_ready_go)     //I, 1
     );
@@ -291,12 +293,12 @@ writeback_stage wb_stage
                                     
     .wb_rf_wen      (wb_rf_wen      ), //O, 1
     .wb_rf_waddr    (wb_rf_waddr    ), //O, 5
-    .wb_rf_wdata    (wb_rf_wdata    )  //O, 32
+    .wb_rf_wdata    (wb_rf_wdata    ),  //O, 32
 
   `ifdef SIMU_DEBUG
-   ,.mem_pc         (mem_pc         ), //I, 32
+    .mem_pc         (mem_pc         ), //I, 32
     .mem_inst       (mem_inst       ), //I, 32
-    .wb_pc          (wb_pc          )  //O, 32
+    .wb_pc          (wb_pc          ),  //O, 32
   `endif
     
     .now_allowin    (wb_allowin     ), //O, 1

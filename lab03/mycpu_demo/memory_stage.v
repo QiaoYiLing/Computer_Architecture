@@ -45,10 +45,10 @@ module memory_stage(
 
     output wire [39:0] mem_out_op,      //control signals used in WB stage
     output reg  [ 4:0] mem_dest,        //reg num of dest operand
-    output wire [31:0] mem_value        //mem_stage final result
+    output wire [31:0] mem_value,        //mem_stage final result
 
   `ifdef SIMU_DEBUG
-   ,input  wire [31:0] exe_pc,          //pc @execute_stage
+    input  wire [31:0] exe_pc,          //pc @execute_stage
     input  wire [31:0] exe_inst,        //instr code @execute_stage
     output reg  [31:0] mem_pc,          //pc @memory_stage
     output reg  [31:0] mem_inst,        //instr code @memory_stage
@@ -64,12 +64,10 @@ module memory_stage(
 
 
 //pipe_line
-wire               now_to_next_valid;
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
 
 reg  [39:0] mem_op;
-reg  [31:0] mem_value;
 reg  [31:0] value;
 
 assign mem_out_op = mem_op;
@@ -84,7 +82,7 @@ begin
     end
     else if (pre_to_now_valid && now_allowin) begin 
         mem_op <= exe_out_op;
-        value <= de_out_op[1] ? data_sram_rdata : exe_value;
+        value <= exe_out_op[1] ? data_sram_rdata : exe_value;
         mem_dest <= exe_dest;
     end
 end
@@ -110,6 +108,7 @@ begin
     else if (pre_to_now_valid && now_allowin) begin 
 	mem_pc <= exe_pc;
 	mem_inst <= exe_inst;
+	end
 end
 `endif
 
