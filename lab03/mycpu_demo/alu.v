@@ -14,6 +14,7 @@ module alu(
 	output Zero,
 	output [`DATA_WIDTH - 1:0] Result
 );
+ 
 reg [`DATA_WIDTH - 1:0] reswithsign;//有符号数运算的结果
 reg sltres1;
 //reg sltres2;
@@ -52,10 +53,36 @@ begin
 		Zero = (Result == 0);
 	end
 	
-	3'b011: //ALUop=011,FUNCTION
+	3'b011: //ALUop=011,FUNCTION=Sll
 	begin
-	    
-    end
+		Result = B << A[4:0]; //B = rt, A = shamt
+		Overflow = 0; //无定义(?)
+		CarryOut = 0; //无定义(?)
+		Zero = (Result == 0); //无定义(?)
+    	end
+
+	3'b100: //ALUop=100,FUNCTION=Lui
+	begin
+		Result = {B[15:0],16'b0}; //B = rt
+		Overflow = 0; //无定义(?)
+		CarryOut = 0; //无定义(?)
+		Zero = (Result == 0); //无定义(?)
+	end
+
+	3'b101: //ALUop=101,FUNCTION=Slt_unsigned
+	begin
+		negb = ~B;
+		negbs = ~B[`DATA_WIDTH - 2:0];
+		{Cout,Result} = A + negb + 1;
+		reswithsign = A[`DATA_WIDTH - 2:0] + negbs + 1;
+		Overflow = reswithsign[`DATA_WIDTH - 1] ^ Cout;
+		CarryOut = ~Cout;//减法最高位为0时借位 //进行减法操作
+		//sltres1 = Overflow ^ Result[`DATA_WIDTH - 1];//有符号slt
+		sltres2 = CarryOut;//无符号slt
+		Result = {{(`DATA_WIDTH - 1){1'b0}},sltres2};
+		//Result = {{(`DATA_WIDTH - 1){1'b0}},sltres1};
+		Zero = 0;
+	end
 
 	3'b110: //ALUop=110,FUNCTION=Subtract
 	begin
@@ -68,7 +95,7 @@ begin
 		Zero = (A == B);
 	end
 
-	3'b111: //ALUop=111,FUNCTION=Slt
+	3'b111: //ALUop=111,FUNCTION=Slt_signed
 	begin
 		negb = ~B;
 		negbs = ~B[`DATA_WIDTH - 2:0];

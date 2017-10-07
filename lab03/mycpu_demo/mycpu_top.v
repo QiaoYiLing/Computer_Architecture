@@ -177,6 +177,7 @@ decode_stage de_stage
     .resetn         (resetn         ), //I, 1
                                     
     .fe_inst        (fe_inst        ), //I, 32
+    .fe_pc          (fe_pc          ), //I, 32
                                     
     .de_rf_raddr1   (de_rf_raddr1   ), //O, 5
     .de_rf_rdata1   (de_rf_rdata1   ), //I, 32
@@ -198,8 +199,7 @@ decode_stage de_stage
     .de_st_value    (de_st_value    )  //O, 32
 
   `ifdef SIMU_DEBUG
-   ,.fe_pc          (fe_pc          ), //I, 32
-    .de_pc          (de_pc          ), //O, 32
+   ,.de_pc          (de_pc          ), //O, 32
     .de_inst        (de_inst        )  //O, 32 
   `endif
     

@@ -61,9 +61,7 @@ module writeback_stage(
 reg  [39:0] wb_op;
 reg  [ 4:0] wb_dest;
 reg  [31:0] wb_value;
-`ifdef SIMU_DEBUG
-reg  [31:0] wb_inst;
-`endif
+
 //pipe_line
 wire               now_to_next_valid;
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
@@ -97,5 +95,20 @@ begin
         now_valid <= pre_to_now_valid;
     end
 end
+
+
+`ifndef SIMU_DEBU
+reg  [31:0] wb_inst;      
+always @(posedge clk)
+begin
+    if (resetn) begin
+        wb_pc <= 0;
+        wb_inst <= 0;
+    end
+    else if (pre_to_now_valid && now_allowin) begin 
+	wb_pc <= mem_pc;
+	wb_inst <= mem_inst;
+end
+`endif
 
 endmodule //writeback_stage

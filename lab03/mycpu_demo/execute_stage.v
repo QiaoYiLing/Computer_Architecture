@@ -85,7 +85,7 @@ assign  data_sram_addr = exe_alu_result;
 assign  data_sram_wdata = de_st_value;
 
 assign exe_out_op = exe_op;      
-assign exe_value = exe_alu_result;       
+assign exe_value = de_out_op[12] ? de_st_value : exe_alu_result;       //when jr, store pc+8
 
 always @(posedge clk)
 begin
@@ -124,5 +124,18 @@ alu alu4cpu
 
 	.Result  (exe_alu_result)
     );
+    
+`ifndef SIMU_DEBU
+always @(posedge clk)
+begin
+    if (resetn) begin
+        exe_pc <= 0;
+        exe_inst <= 0;
+    end
+    else if (pre_to_now_valid && now_allowin) begin 
+	exe_pc <= de_pc;
+	exe_inst <= de_inst;
+end
+`endif
     
 endmodule //execute_stage

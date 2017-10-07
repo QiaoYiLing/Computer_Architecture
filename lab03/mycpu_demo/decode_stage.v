@@ -37,6 +37,7 @@ module decode_stage(
     input  wire        resetn,
 
     input  wire [31:0] fe_inst,
+    input  wire [31:0] fe_pc,
 
     output wire [ 4:0] de_rf_raddr1,
     input  wire [31:0] de_rf_rdata1,
@@ -58,8 +59,7 @@ module decode_stage(
     output wire [31:0] de_st_value      //value stored to memory
 
   `ifdef SIMU_DEBUG
-   ,input  wire [31:0] fe_pc,
-    output reg  [31:0] de_pc,
+   ,output reg  [31:0] de_pc,
     output reg  [31:0] de_inst,         //instr code @decode stage
   `endif
   
@@ -70,10 +70,6 @@ module decode_stage(
     output reg         now_valid,
     input  wire        now_ready_go        
 );
-
-`ifndef SIMU_DEBUG
-reg  [31:0] de_inst;        //instr code @decode stage
-`endif
 
 //pipe_line
 wire               now_to_next_valid;
@@ -122,18 +118,20 @@ wire [31:0 ] de_br_target = de_rf_rdata1;
 wire RegDst = r_type;
 wire ALUSrcB= inst_addiu|inst_lw|inst_sw|inst_slti|inst_sltiu;
 
-assign de_dest = reg_dst ? Instruction[20:16] : Instruction[15:11];
+assign de_dest = reg_dst ? Instruction[20:16] : 
+                 inst_jr ? 31 :
+                 Instruction[15:11];
 assign de_vsrc1 = de_rf_rdata1;
 assign de_vsrc2 = ALUSrcB ? sign_extend : de_rf_rdata2;
-assign de_st_value = de_rf_rdata2;
+assign de_st_value = inst_jr ? fe_pc+8 : de_rf_rdata2;
     
 //exe
 wire [2 :0 ] exe_alu_op   = (inst_addiu|inst_addu|inst_lw|inst_sw) ? 2 :    //add
                             (inst_or)                              ? 1 :    //or
                             (inst_slt|inst_slti)                   ? 7 :    //slt
-                            (inst_sll)                             ? 4 :    //left_shift
-                            (inst_sltiu)                           ? 3 :    //sltiu
-                            (inst_lui)                             ? 5 :    //lui
+                            (inst_sll)                             ? 3 :    //left_shift
+                            (inst_sltiu)                           ? 5 :    //sltiu
+                            (inst_lui)                             ? 4 :    //lui
                             0;
 
 //mem
@@ -141,14 +139,16 @@ wire  mem_MemRead  = inst_lw;
 wire  mem_MemWrite = inst_sw;
 
 //wb
-wire  wb_RegWrite  = inst_addiu|r_type|inst_lw|inst_lui|inst_sll|inst_slti|inst_sltiu;
+wire  wb_RegWrite  = inst_addiu|r_type|inst_lw|inst_lui|inst_sll|inst_slti|inst_sltiu|inst_jr;
 wire  wb_MemtoReg  = inst_lw;
 //pass_op
 assign de_out_op[22:20] = exe_alu_op;
 assign de_out_op[10] = mem_MemRead;
 assign de_out_op[11] = mem_MemWrite;
+assign de_out_op[12]= inst_jr;
 assign de_out_op[0] = wb_RegWrite;
 assign de_out_op[1] = wb_MemtoReg;
+
 
 
 always @(posedge clk)
@@ -171,5 +171,17 @@ alu alu_pc_judge
 	.Result  (de_pc_slt   )
     );
 
+
+`ifndef SIMU_DEBU  
+always @(posedge clk)
+begin
+    if (resetn) begin
+        de_pc <= 0;
+        de_inst <= 0;
+    end
+    else if (pre_to_now_valid && now_allowin) begin 
+	de_inst <= fe_inst;
+	de_pc   <= fe_pc;
+end
 
 endmodule //decode_stage
