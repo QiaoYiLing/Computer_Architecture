@@ -36,6 +36,7 @@ module nextpc_gen(
     input  wire        resetn,
 
     input  wire [31:0] fe_pc,
+    input  wire        fe_wen,
 
     input  wire        de_br_taken,     //1: branch taken, go to the branch target
     input  wire        de_br_is_br,     //1: target is PC+offset
@@ -51,7 +52,7 @@ module nextpc_gen(
     output wire [31:0] nextpc
 );
 
-assign inst_sram_en   = 1;
+assign inst_sram_en   = fe_wen;
 assign inst_sram_addr = fe_pc;
 
 

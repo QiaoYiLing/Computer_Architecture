@@ -60,11 +60,15 @@ module decode_stage(
   `ifdef SIMU_DEBUG
    ,input  wire [31:0] fe_pc,
     output reg  [31:0] de_pc,
-    output reg  [31:0] de_inst          //instr code @decode stage
+    output reg  [31:0] de_inst,         //instr code @decode stage
   `endif
   
-    input  wire        next_allowin;
-    output wire        now_allowin;
+    input  wire        next_allowin,
+    output wire        now_allowin,
+    input  wire        pre_to_now_valid,
+    output wire        now_to_next_valid,
+    output reg         now_valid,
+    input  wire        now_ready_go        
 );
 
 `ifndef SIMU_DEBUG
@@ -72,9 +76,7 @@ reg  [31:0] de_inst;        //instr code @decode stage
 `endif
 
 //pipe_line
-wire               now_ready_go;
 wire               now_to_next_valid;
-assign now_ready_go = 1;
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
     
@@ -155,7 +157,7 @@ begin
         now_valid <= 0;
     end
     else if (now_allowin) begin 
-        now_valid <= now_to_next_valid;
+        now_valid <= pre_to_now_valid;
     end
 end
 

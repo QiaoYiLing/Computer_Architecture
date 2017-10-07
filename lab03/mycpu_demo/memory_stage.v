@@ -51,16 +51,18 @@ module memory_stage(
    ,input  wire [31:0] exe_pc,          //pc @execute_stage
     input  wire [31:0] exe_inst,        //instr code @execute_stage
     output reg  [31:0] mem_pc,          //pc @memory_stage
-    output reg  [31:0] mem_inst         //instr code @memory_stage
+    output reg  [31:0] mem_inst,        //instr code @memory_stage
   `endif
   
-    input  wire        next_allowin;
-    output wire        now_allowin;
+    input  wire        next_allowin,
+    output wire        now_allowin,
+    input  wire        pre_to_now_valid,
+    output wire        now_to_next_valid,
+    output reg         now_valid,
+    input  wire        now_ready_go        
 );
 //pipe_line
-wire               now_ready_go;
 wire               now_to_next_valid;
-assign now_ready_go = 1;
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
 
@@ -78,7 +80,7 @@ begin
         value <=0;
         mem_dest <=0;
     end
-    else if (now_to_next_valid && now_allowin) begin 
+    else if (pre_to_now_valid && now_allowin) begin 
         mem_op <= exe_out_op;
         value <= de_out_op[1] ? data_sram_rdata : exe_value;
         mem_dest <= exe_dest;
@@ -91,7 +93,7 @@ begin
         now_valid <= 0;
     end
     else if (now_allowin) begin 
-        now_valid <= now_to_next_valid;
+        now_valid <= pre_to_now_valid;
     end
 end
 

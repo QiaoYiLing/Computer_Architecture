@@ -47,11 +47,15 @@ module writeback_stage(
   `ifdef SIMU_DEBUG
    ,input  wire [31:0] mem_pc,          //pc @memory_stage
     input  wire [31:0] mem_inst,        //instr code @memory_stage
-    output reg  [31:0] wb_pc 
+    output reg  [31:0] wb_pc,
   `endif
   
-    input  wire        next_allowin;
-    output wire        now_allowin;
+    input  wire        next_allowin,
+    output wire        now_allowin,
+    input  wire        pre_to_now_valid,
+    output wire        now_to_next_valid,
+    output reg         now_valid,
+    input  wire        now_ready_go        
 );
 
 reg  [39:0] wb_op;
@@ -61,14 +65,13 @@ reg  [31:0] wb_value;
 reg  [31:0] wb_inst;
 `endif
 //pipe_line
-wire               now_ready_go;
 wire               now_to_next_valid;
-assign now_ready_go = 1;
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
 //rf
-assign wb_rf_wen = wb_RegWrite;
-assign mem_dest = wb_dest;
+assign wb_rf_wen = wb_out_op[0];
+
+assign wb_rf_waddr = wb_dest; 
 assign wb_rf_wdata = wb_value;
 
 always @(posedge clk)
@@ -78,10 +81,10 @@ begin
         wb_value <=0;
         wb_dest <=0;
     end
-    else if (now_to_next_valid && now_allowin) begin 
+    else if (pre_to_now_valid && now_allowin) begin 
         wb_op <= mem_out_op;
         wb_value <= mem_value;
-        mem_dest <= mem_dest;
+        wb_dest = mem_dest;
     end
 end
 
@@ -91,7 +94,7 @@ begin
         now_valid <= 0;
     end
     else if (now_allowin) begin 
-        now_valid <= now_to_next_valid;
+        now_valid <= pre_to_now_valid;
     end
 end
 

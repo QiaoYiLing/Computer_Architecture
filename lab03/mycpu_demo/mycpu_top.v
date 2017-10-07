@@ -60,6 +60,7 @@ module mycpu_top(
 wire [31:0] nextpc;
 wire [31:0] fe_pc;
 wire [31:0] fe_inst;
+wire        fe_wen;
 wire [ 4:0] de_rf_raddr1;
 wire [ 4:0] de_rf_raddr2;
 wire        de_br_taken;    
@@ -93,12 +94,32 @@ wire [31:0] mem_pc;
 wire [31:0] mem_inst;
 wire [31:0] wb_pc;
 `endif
-
+//pipe_line
 wire        fe_allowin;
 wire        de_allowin;
 wire        exe_allowin;
 wire        mem_allowin;
 wire        wb_allowin;
+wire        fe_to_de_valid;
+wire        de_to_exe_valid;
+wire        exe_to_mem_valid;
+wire        mem_to_wb_valid;
+wire        fe_valid;
+wire        de_valid;
+wire        mem_valid;
+wire        exe_valid;
+wire        wb_valid;
+wire        fe_ready_go;
+wire        de_ready_go;
+wire        exe_ready_go;
+wire        mem_ready_go;
+wire        wb_ready_go;
+assign      fe_ready_go = 1;
+assign      de_ready_go = !( (exe_valid&&(|exe_dest)&&(de_rf_raddr2==exe_dest||de_rf_raddr1==exe_dest)) || (mem_valid&&(|mem_dest)&&(de_rf_raddr2==mem_dest||de_rf_raddr1==mem_dest)) || (wb_valid&&(|wb_rf_waddr)&&(de_rf_raddr2==wb_rf_waddr||de_rf_raddr1==wb_rf_waddr)) );
+assign      exe_ready_go = 1;
+assign      mem_ready_go = 1;
+assign      wb_ready_go = 1;
+
 
 
 // we only need an inst ROM now
@@ -111,6 +132,7 @@ nextpc_gen nextpc_gen
     .resetn         (resetn         ), //I, 1
 
     .fe_pc          (fe_pc          ), //I, 32
+    .fe_wen         (fe_wen         ), //I, 1
 
     .de_br_taken    (de_br_taken    ), //I, 1 
     .de_br_is_br    (de_br_is_br    ), //I, 1
@@ -138,9 +160,14 @@ fetch_stage fe_stage
                                     
     .fe_pc          (fe_pc          ), //O, 32  
     .fe_inst        (fe_inst        ), //O, 32
+    .fe_wen         (fe_wen         ), //O, 1
     
     .now_allowin    (fe_allowin     ), //O, 1
-    .next_allowin   (de_allowin     )  //I, 1
+    .next_allowin   (de_allowin     ),  //I, 1
+    .pre_to_now_valid (1             ), //I, 1
+    .now_to_next_valid(fe_to_de_valid),  //O, 1
+    .now_valid        (fe_valid),       //O, 1
+    .now_ready_go      (fe_ready_go)       //I, 1
     );
 
 
@@ -178,6 +205,10 @@ decode_stage de_stage
     
     .now_allowin    (de_allowin     ), //O, 1
     .next_allowin   (exe_allowin    )  //I, 1
+    .pre_to_now_valid (fe_to_de_valid), //I, 1
+    .now_to_next_valid(de_to_exe_valid),  //O, 1
+    .now_valid        (de_valid),       //O, 1
+    .now_ready_go      (de_ready_go)       //I, 1
     );
 
 
@@ -198,8 +229,8 @@ execute_stage exe_stage
 
     .data_sram_en   (data_sram_en   ), //O, 1
     .data_sram_wen  (data_sram_wen  ), //O, 4
-    .data_sram_addr (data_sram_addr ), //O, 32
-    .data_sram_wdata(data_sram_wdata)  //O, 32
+    .data_sram_addr (de_to_exe_valid), //O, 32
+    .data_sram_wdata(exe_to_mem_valid)  //O, 32
 
   `ifdef SIMU_DEBUG
    ,.de_pc          (de_pc          ), //I, 32
@@ -210,6 +241,10 @@ execute_stage exe_stage
     
     .now_allowin    (exe_allowin    ), //O, 1
     .next_allowin   (mem_allowin    )  //I, 1
+    .pre_to_now_valid (exe_to_mem_valid), //I, 1
+    .now_to_next_valid(mem_to_wb_valid),  //O, 1
+    .now_valid        (exe_valid),       //O, 1
+    .now_ready_go      (exe_ready_go)       //I, 1
     );
 
 
@@ -232,11 +267,16 @@ memory_stage mem_stage
    ,.exe_pc         (exe_pc         ), //I, 32
     .exe_inst       (exe_inst       ), //I, 32
     .mem_pc         (mem_pc         ), //O, 32
-    .mem_inst       (mem_inst       )  //O, 32
+    .mem_inst       (mem_inst       ),  //O, 1
+    .now_valid        (mem_valid)
   `endif
     
     .now_allowin    (mem_allowin    ), //O, 1
     .next_allowin   (wb_allowin     )  //I, 1
+    .pre_to_now_valid (exe_to_mem_valid), //I, 1
+    .now_to_next_valid(mem_to_wb_valid)  //O, 1
+    .now_valid        (mem_valid),       //O, 1
+    .now_ready_go     (mem_ready_go)     //I, 1
     );
 
 
@@ -260,7 +300,10 @@ writeback_stage wb_stage
   `endif
     
     .now_allowin    (wb_allowin     ), //O, 1
-    .next_allowin   (1'b1           )  //I, 1
+    .next_allowin   (1'b1           ), //I, 1
+    .pre_to_now_valid (mem_to_wb_valid),  //O, 1
+    .now_valid        (wb_valid),       //O, 1
+    .now_ready_go      (fe_ready_go)       //I, 1
     );
 
 
