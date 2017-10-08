@@ -47,12 +47,12 @@ module memory_stage(
     output reg  [ 4:0] mem_dest,        //reg num of dest operand
     output wire [31:0] mem_value,        //mem_stage final result
 
-  `ifdef SIMU_DEBUG
+ // `ifdef SIMU_DEBUG
     input  wire [31:0] exe_pc,          //pc @execute_stage
     input  wire [31:0] exe_inst,        //instr code @execute_stage
     output reg  [31:0] mem_pc,          //pc @memory_stage
     output reg  [31:0] mem_inst,        //instr code @memory_stage
-  `endif
+  //`endif
   
     input  wire        next_allowin,
     output wire        now_allowin,
@@ -98,7 +98,7 @@ begin
 end
 
 
-`ifndef SIMU_DEBU
+//`ifdef SIMU_DEBUG
 always @(posedge clk)
 begin
     if (resetn) begin
@@ -110,6 +110,6 @@ begin
 	mem_inst <= exe_inst;
 	end
 end
-`endif
+//`endif
 
 endmodule //memory_stage

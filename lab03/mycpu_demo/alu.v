@@ -9,22 +9,18 @@ module alu(
 	input [`DATA_WIDTH - 1:0] A,
 	input [`DATA_WIDTH - 1:0] B,
 	input [2:0] ALUop,
-	output Overflow,
-	output CarryOut,
-	output Zero,
-	output [`DATA_WIDTH - 1:0] Result
+	output reg Overflow,
+	output reg CarryOut,
+	output reg Zero,
+	output reg [`DATA_WIDTH - 1:0] Result
 );
  
 reg [`DATA_WIDTH - 1:0] reswithsign;//有符号数运算的结果
 reg sltres1;
-//reg sltres2;
+reg sltres2;
 reg Cout;
 reg [`DATA_WIDTH - 1:0] negb;
 reg [`DATA_WIDTH - 2:0] negbs;
-reg Overflow;
-reg CarryOut;
-reg Zero;
-reg [`DATA_WIDTH - 1:0] Result;
 
 always@(A or B or ALUop) 
 begin

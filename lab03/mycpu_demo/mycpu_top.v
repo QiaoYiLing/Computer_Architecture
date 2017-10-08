@@ -201,10 +201,10 @@ decode_stage de_stage
     .de_vsrc2       (de_vsrc2       ), //O, 32
     .de_st_value    (de_st_value    ),  //O, 32
 
-  `ifdef SIMU_DEBUG
+//  `ifdef SIMU_DEBUG
     .de_pc          (de_pc          ), //O, 32
     .de_inst        (de_inst        ),  //O, 32 
-  `endif
+ // `endif
     
     .now_allowin    (de_allowin     ), //O, 1
     .next_allowin   (exe_allowin    ),  //I, 1
@@ -232,15 +232,15 @@ execute_stage exe_stage
 
     .data_sram_en   (data_sram_en   ), //O, 1
     .data_sram_wen  (data_sram_wen  ), //O, 4
-    .data_sram_addr (de_to_exe_valid), //O, 32
-    .data_sram_wdata(exe_to_mem_valid),  //O, 32
+    .data_sram_addr (data_sram_addr), //O, 32
+    .data_sram_wdata(data_sram_wdata),  //O, 32
 
-  `ifdef SIMU_DEBUG
+ // `ifdef SIMU_DEBUG
     .de_pc          (de_pc          ), //I, 32
     .de_inst        (de_inst        ), //I, 32
     .exe_pc         (exe_pc         ), //O, 32
     .exe_inst       (exe_inst       ),  //O, 32
-  `endif
+ // `endif
     
     .now_allowin    (exe_allowin    ), //O, 1
     .next_allowin   (mem_allowin    ),  //I, 1
@@ -266,12 +266,12 @@ memory_stage mem_stage
     .mem_dest       (mem_dest       ), //O, 5
     .mem_value      (mem_value      ),  //O, 32
 
-  `ifdef SIMU_DEBUG
+//  `ifdef SIMU_DEBUG
     .exe_pc         (exe_pc         ), //I, 32
     .exe_inst       (exe_inst       ), //I, 32
     .mem_pc         (mem_pc         ), //O, 32
     .mem_inst       (mem_inst       ),  //O, 1
-  `endif
+//  `endif
   
     .next_allowin   (wb_allowin     ),  //I, 1
     .now_allowin    (mem_allowin    ), //O, 1
@@ -295,11 +295,11 @@ writeback_stage wb_stage
     .wb_rf_waddr    (wb_rf_waddr    ), //O, 5
     .wb_rf_wdata    (wb_rf_wdata    ),  //O, 32
 
-  `ifdef SIMU_DEBUG
+ // `ifdef SIMU_DEBUG
     .mem_pc         (mem_pc         ), //I, 32
     .mem_inst       (mem_inst       ), //I, 32
     .wb_pc          (wb_pc          ),  //O, 32
-  `endif
+//  `endif
     
     .now_allowin    (wb_allowin     ), //O, 1
     .next_allowin   (1'b1           ), //I, 1

@@ -58,10 +58,10 @@ module decode_stage(
     output wire [31:0] de_vsrc2,        //value of source operand 2
     output wire [31:0] de_st_value,      //value stored to memory
 
-  `ifdef SIMU_DEBUG
-   ,output reg  [31:0] de_pc,
+//  `ifdef SIMU_DEBUG
+    output reg  [31:0] de_pc,
     output reg  [31:0] de_inst,         //instr code @decode stage
-  `endif
+//  `endif
   
     input  wire        next_allowin,
     output wire        now_allowin,
@@ -172,7 +172,7 @@ alu alu_pc_judge
     );
 
 
-`ifndef SIMU_DEBU  
+//`ifdef SIMU_DEBUG  
 always @(posedge clk)
 begin
     if (resetn) begin
@@ -180,10 +180,10 @@ begin
         de_inst <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
-	de_inst <= fe_inst;
-	de_pc   <= fe_pc;
+    	de_inst <= fe_inst;
+	    de_pc   <= fe_pc;
 	end
 end
-`endif
+//`endif
 
 endmodule //decode_stage

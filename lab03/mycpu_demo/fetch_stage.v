@@ -52,7 +52,6 @@ module fetch_stage(
     input  wire        now_ready_go        
 );
 //pipe_line
-wire               now_to_next_valid; 
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
     

@@ -52,12 +52,12 @@ module execute_stage(
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata, 
 
-  `ifdef SIMU_DEBUG
+ // `ifdef SIMU_DEBUG
     input  wire [31:0] de_pc,           //pc @decode_stage
     input  wire [31:0] de_inst,         //instr code @decode_stage
     output reg  [31:0] exe_pc,          //pc @execute_stage
     output reg  [31:0] exe_inst,        //instr code @execute_stage
-  `endif
+ // `endif
   
     input  wire        next_allowin,
     output wire        now_allowin,
@@ -124,7 +124,7 @@ alu alu4cpu
 	.Result  (exe_alu_result)
     );
     
-`ifndef SIMU_DEBU
+//`ifdef SIMU_DEBUG
 always @(posedge clk)
 begin
     if (resetn) begin
@@ -136,6 +136,6 @@ begin
 	exe_inst <= de_inst;
 	end
 end
-`endif
+//`endif
     
 endmodule //execute_stage
