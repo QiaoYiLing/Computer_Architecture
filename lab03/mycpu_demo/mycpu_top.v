@@ -132,7 +132,7 @@ assign inst_sram_wdata = 32'b0;
 
 nextpc_gen nextpc_gen
     (
-    .resetn         (resetn         ), //I, 1
+    .resetn         (~resetn         ), //I, 1
 
     .fe_pc          (fe_pc          ), //I, 32
     .fe_wen         (fe_wen         ), //I, 1
@@ -155,7 +155,7 @@ nextpc_gen nextpc_gen
 fetch_stage fe_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (resetn         ), //I, 1
+    .resetn         (~resetn         ), //I, 1
                                     
     .nextpc         (nextpc         ), //I, 32
                                     
@@ -177,7 +177,7 @@ fetch_stage fe_stage
 decode_stage de_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (resetn         ), //I, 1
+    .resetn         (~resetn         ), //I, 1
                                     
     .fe_inst        (fe_inst        ), //I, 32
     .fe_pc          (fe_pc          ), //I, 32
@@ -218,7 +218,7 @@ decode_stage de_stage
 execute_stage exe_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (resetn         ), //I, 1
+    .resetn         (~resetn         ), //I, 1
                                     
     .de_out_op      (de_out_op      ), //I, ??
     .de_dest        (de_dest        ), //I, 5 
@@ -244,8 +244,8 @@ execute_stage exe_stage
     
     .now_allowin    (exe_allowin    ), //O, 1
     .next_allowin   (mem_allowin    ),  //I, 1
-    .pre_to_now_valid (exe_to_mem_valid), //I, 1
-    .now_to_next_valid(mem_to_wb_valid),  //O, 1
+    .pre_to_now_valid (de_to_exe_valid), //I, 1
+    .now_to_next_valid(exe_to_mem_valid),  //O, 1
     .now_valid        (exe_valid),       //O, 1
     .now_ready_go      (exe_ready_go)       //I, 1
     );
@@ -254,7 +254,7 @@ execute_stage exe_stage
 memory_stage mem_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (resetn         ), //I, 1
+    .resetn         (~resetn         ), //I, 1
                                     
     .exe_out_op     (exe_out_op     ), //I, ??
     .exe_dest       (exe_dest       ), //I, 5
@@ -285,7 +285,7 @@ memory_stage mem_stage
 writeback_stage wb_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (resetn         ), //I, 1
+    .resetn         (~resetn         ), //I, 1
                                     
     .mem_out_op     (mem_out_op     ), //I, ??
     .mem_dest       (mem_dest       ), //I, 5

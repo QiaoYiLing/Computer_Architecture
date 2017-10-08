@@ -56,7 +56,7 @@ assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
     
 assign fe_inst = inst_sram_rdata;
-assign fe_wen  = pre_to_now_valid && now_allowin;
+assign fe_wen  = pre_to_now_valid && now_allowin && !resetn;
 
 always @(posedge clk)
 begin
