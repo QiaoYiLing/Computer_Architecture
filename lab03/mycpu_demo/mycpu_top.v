@@ -327,7 +327,7 @@ regfile_2r1w regfile
 
 `ifdef SIMU_DEBUG
 assign debug_wb_pc       = wb_pc;
-assign debug_wb_rf_wen   = wb_rf_wen;
+assign debug_wb_rf_wen   = {4{wb_rf_wen}};
 assign debug_wb_rf_wnum  = wb_rf_waddr;
 assign debug_wb_rf_wdata = wb_rf_wdata;
 `endif

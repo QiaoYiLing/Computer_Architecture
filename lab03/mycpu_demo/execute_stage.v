@@ -44,7 +44,7 @@ module execute_stage(
 
     output wire [39:0] exe_out_op,      //control signals used in MEM, WB stages
     output reg  [ 4:0] exe_dest,        //reg num of dest operand
-    output wire [31:0] exe_value,       //alu result from exe_stage or other intermediate 
+    output reg  [31:0] exe_value,       //alu result from exe_stage or other intermediate 
                                         //value for the following stages
 
     output wire        data_sram_en,
@@ -84,7 +84,6 @@ assign  data_sram_addr = exe_alu_result;
 assign  data_sram_wdata = de_st_value;
 
 assign exe_out_op = exe_op;      
-assign exe_value = de_out_op[12] ? de_st_value : exe_alu_result;       //when jr, store pc+8
 
 always @(posedge clk)
 begin
@@ -94,6 +93,7 @@ begin
         exe_vsrc1 <= 0;
         exe_vsrc2 <= 0;
         exe_op   <= 0;
+        exe_value <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
         exe_dest <= de_dest;
@@ -101,6 +101,7 @@ begin
         exe_vsrc1 <= de_vsrc1;
         exe_vsrc2 <= de_vsrc2; 
         exe_op <= de_out_op;
+        exe_value = de_out_op[12] ? de_st_value : exe_alu_result;
     end
 end
 

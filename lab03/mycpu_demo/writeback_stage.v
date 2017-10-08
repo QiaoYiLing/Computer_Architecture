@@ -81,7 +81,7 @@ begin
     else if (pre_to_now_valid && now_allowin) begin 
         wb_op <= mem_out_op;
         wb_value <= mem_value;
-        wb_dest = mem_dest;
+        wb_dest <= mem_dest;
     end
 end
 

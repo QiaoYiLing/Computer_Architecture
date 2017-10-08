@@ -79,13 +79,13 @@ assign now_to_next_valid = now_valid && now_ready_go;
 wire [31:0 ] Instruction = fe_inst;
 wire [5 :0 ] op_code = Instruction[31:26];
 wire [5 :0 ] func = Instruction[5:0];  
-wire [15:0 ]immediate = Instruction[15:0];
-wire sign_extend = {{16{immediate[15]}},immediate};  
+wire [15:0 ] immediate = Instruction[15:0];
+wire [31:0 ] sign_extend = {{16{immediate[15]}},immediate};  
 assign de_rf_raddr1 = Instruction[25:21];
 assign de_rf_raddr2 = Instruction[20:16];
     
 wire inst_addiu = (op_code==6'b001001                   );  //addiu
-wire inst_addu  = (op_code==6'b100001                   );  //addu
+wire inst_addu  = (op_code==6'b000000 && func==6'b100001);  //addu
 wire inst_nop   = (op_code==6'b000000 && func==6'b000000);   //nop
 wire inst_lw    = (op_code==6'b100011                   );    //lw
 wire inst_sw    = (op_code==6'b101011                   );    //sw
@@ -115,8 +115,8 @@ assign         de_br_offset = Instruction[15:0];
 assign         de_br_index  = Instruction[25:0];
 assign         de_br_target = de_rf_rdata1;
 //de
-wire RegDst = r_type;
-wire ALUSrcB= inst_addiu|inst_lw|inst_sw|inst_slti|inst_sltiu;
+wire RegDst = r_type|inst_addiu|inst_sltiu|inst_lui|inst_slti|inst_lw;
+wire ALUSrcB= inst_addiu|inst_lw|inst_sw|inst_slti|inst_sltiu|inst_lui;
 
 assign de_dest = RegDst ? Instruction[20:16] : 
                  inst_jr ? 31 :
