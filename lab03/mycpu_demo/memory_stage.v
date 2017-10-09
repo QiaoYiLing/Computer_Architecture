@@ -77,8 +77,8 @@ always @(posedge clk)
 begin
     if (resetn) begin
         mem_op              <= 0;
-        value               <=0;
-        mem_dest            <=0;
+        value               <= 0;
+        mem_dest            <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
         mem_op              <= exe_out_op;
