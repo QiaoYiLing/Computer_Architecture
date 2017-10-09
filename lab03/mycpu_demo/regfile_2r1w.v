@@ -34,7 +34,8 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 module regfile_2r1w(
     input         clk,
-
+    input         resetn,
+    
     input  [ 4:0] ra1,
     output [31:0] rd1,
 
@@ -50,9 +51,12 @@ reg  [31:0] heap [31:0];
 
 assign rd1 = heap[ra1];
 assign rd2 = heap[ra2];
-
+integer i;
 always @(posedge clk)
 begin
+    if(resetn) begin
+    for (i=0;i<32;i=i+1) heap[i] <= 32'b0; //¸´Î»
+    end
     heap[0] <= 32'b0;
     if (we1 && (|wa1)) begin
         heap[wa1] <= wd1;

@@ -312,6 +312,7 @@ writeback_stage wb_stage
 regfile_2r1w regfile
     (
     .clk    (clk            ), //I, 1
+    .resetn (~resetn        ), //I, 1
 
     .ra1    (de_rf_raddr1   ), //I, 5
     .rd1    (de_rf_rdata1   ), //O, 32

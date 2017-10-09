@@ -51,7 +51,7 @@ begin
 	
 	3'b011: //ALUop=011,FUNCTION=Sll
 	begin
-		Result = B << A[4:0]; //B = rt, A = shamt
+		Result = B << A; //B = rt, A = shamt
 		Overflow = 0; //无定义(?)
 		CarryOut = 0; //无定义(?)
 		Zero = (Result == 0); //无定义(?)

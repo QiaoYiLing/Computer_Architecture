@@ -44,7 +44,7 @@ module execute_stage(
 
     output wire [39:0] exe_out_op,      //control signals used in MEM, WB stages
     output reg  [ 4:0] exe_dest,        //reg num of dest operand
-    output reg  [31:0] exe_value,       //alu result from exe_stage or other intermediate 
+    output wire [31:0] exe_value,       //alu result from exe_stage or other intermediate 
                                         //value for the following stages
 
     output wire        data_sram_en,
@@ -78,48 +78,48 @@ assign now_to_next_valid = now_valid && now_ready_go;
 wire [31:0 ]  exe_alu_result;
 wire [2 :0 ]  exe_alu_op = exe_op[22:20];
 //mem
-assign  data_sram_en  = de_out_op[10];
-assign  data_sram_wen = {3{de_out_op[11]}};
+//assign  data_sram_en  = 1;
+assign  data_sram_en  = exe_op[10] | data_sram_wen;
+assign  data_sram_wen = {4{exe_op[11]}};
 assign  data_sram_addr = exe_alu_result;
-assign  data_sram_wdata = de_st_value;
+assign  data_sram_wdata = exe_st_value;
 
-assign exe_out_op = exe_op;      
+assign exe_out_op                      = exe_op;      
+assign exe_value                       = exe_op[12] ? exe_st_value : exe_alu_result;
 
 always @(posedge clk)
 begin
     if (resetn) begin
-        exe_dest <= 0;
-        exe_st_value <= 0;
-        exe_vsrc1 <= 0;
-        exe_vsrc2 <= 0;
-        exe_op   <= 0;
-        exe_value <= 0;
+        exe_dest                       <= 0;
+        exe_st_value                   <= 0;
+        exe_vsrc1                      <= 0;
+        exe_vsrc2                      <= 0;
+        exe_op                         <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
-        exe_dest <= de_dest;
-        exe_st_value <= de_st_value;
-        exe_vsrc1 <= de_vsrc1;
-        exe_vsrc2 <= de_vsrc2; 
-        exe_op <= de_out_op;
-        exe_value = de_out_op[12] ? de_st_value : exe_alu_result;
+        exe_dest                       <= de_dest;
+        exe_st_value                   <= de_st_value;
+        exe_vsrc1                      <= de_vsrc1;
+        exe_vsrc2                      <= de_vsrc2; 
+        exe_op                         <= de_out_op;
     end
 end
 
 always @(posedge clk)
 begin
     if (resetn) begin
-        now_valid <= 0;
+        now_valid                      <= 0;
     end
     else if (now_allowin) begin 
-        now_valid <= pre_to_now_valid;
+        now_valid                      <= pre_to_now_valid;
     end
 end
 
 
 alu alu4cpu
 	(
-	.A       (de_vsrc1),
-	.B       (de_vsrc2),
+	.A       (exe_vsrc1),
+	.B       (exe_vsrc2),
 	.ALUop   (exe_alu_op   ),
 
 	.Result  (exe_alu_result)
@@ -129,12 +129,12 @@ alu alu4cpu
 always @(posedge clk)
 begin
     if (resetn) begin
-        exe_pc <= 0;
-        exe_inst <= 0;
+        exe_pc                       <= 0;
+        exe_inst                     <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
-	exe_pc <= de_pc;
-	exe_inst <= de_inst;
+	exe_pc                           <= de_pc;
+	exe_inst                         <= de_inst;
 	end
 end
 //`endif
