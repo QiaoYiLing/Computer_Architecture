@@ -62,8 +62,7 @@ wire [31: 0] fe_alu_result;
 assign nextpc               = de_br_is_jr ? de_br_target :
                               de_br_is_j ? {fe_pc[31:28],de_br_index,2'b0}:
                               fe_alu_result;
-assign fe_alu_result = fe_pc + fe_pc_add;
-/*
+
 alu alu_pc_cal
 	(
 	.A       (fe_pc          ),
@@ -72,5 +71,5 @@ alu alu_pc_cal
 
 	.Result  (fe_alu_result  )
     );
-*/
+
 endmodule //nextpc_gen

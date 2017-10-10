@@ -64,36 +64,36 @@ module memory_stage(
 
 
 //pipe_line
-assign now_allowin           = !now_valid || now_ready_go && next_allowin;
-assign now_to_next_valid     = now_valid && now_ready_go;
+assign now_allowin = !now_valid || now_ready_go && next_allowin;
+assign now_to_next_valid = now_valid && now_ready_go;
 
 reg  [39:0] mem_op;
 reg  [31:0] value;
 
-assign mem_out_op            = mem_op;
-assign mem_value             = mem_op[1] ? data_sram_rdata : value;
+assign mem_out_op = mem_op;
+assign mem_value = mem_op[1] ? data_sram_rdata : value;
 
 always @(posedge clk)
 begin
     if (resetn) begin
-        mem_op              <= 0;
-        value               <= 0;
-        mem_dest            <= 0;
+        mem_op <= 0;
+        value <=0;
+        mem_dest <=0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
-        mem_op              <= exe_out_op;
-        value               <= exe_value;
-        mem_dest            <= exe_dest;
+        mem_op <= exe_out_op;
+        value <= exe_value;
+        mem_dest <= exe_dest;
     end
 end
 
 always @(posedge clk)
 begin
     if (resetn) begin
-        now_valid           <= 0;
+        now_valid <= 0;
     end
     else if (now_allowin) begin 
-        now_valid           <= pre_to_now_valid;
+        now_valid <= pre_to_now_valid;
     end
 end
 
@@ -102,12 +102,12 @@ end
 always @(posedge clk)
 begin
     if (resetn) begin
-        mem_pc              <= 0;
-        mem_inst            <= 0;
+        mem_pc <= 0;
+        mem_inst <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
-	mem_pc                  <= exe_pc;
-	mem_inst                <= exe_inst;
+	mem_pc <= exe_pc;
+	mem_inst <= exe_inst;
 	end
 end
 //`endif

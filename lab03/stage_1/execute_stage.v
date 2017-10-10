@@ -84,34 +84,34 @@ assign  data_sram_wen = {4{exe_op[11]}};
 assign  data_sram_addr = exe_alu_result;
 assign  data_sram_wdata = exe_st_value;
 
-assign exe_out_op                      = exe_op;      
-assign exe_value                       = exe_op[12] ? exe_st_value : exe_alu_result;
+assign exe_out_op = exe_op;      
+assign exe_value = exe_op[12] ? exe_st_value : exe_alu_result;
 
 always @(posedge clk)
 begin
     if (resetn) begin
-        exe_dest                       <= 0;
-        exe_st_value                   <= 0;
-        exe_vsrc1                      <= 0;
-        exe_vsrc2                      <= 0;
-        exe_op                         <= 0;
+        exe_dest <= 0;
+        exe_st_value <= 0;
+        exe_vsrc1 <= 0;
+        exe_vsrc2 <= 0;
+        exe_op   <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
-        exe_dest                       <= de_dest;
-        exe_st_value                   <= de_st_value;
-        exe_vsrc1                      <= de_vsrc1;
-        exe_vsrc2                      <= de_vsrc2; 
-        exe_op                         <= de_out_op;
+        exe_dest <= de_dest;
+        exe_st_value <= de_st_value;
+        exe_vsrc1 <= de_vsrc1;
+        exe_vsrc2 <= de_vsrc2; 
+        exe_op <= de_out_op;
     end
 end
 
 always @(posedge clk)
 begin
     if (resetn) begin
-        now_valid                      <= 0;
+        now_valid <= 0;
     end
     else if (now_allowin) begin 
-        now_valid                      <= pre_to_now_valid;
+        now_valid <= pre_to_now_valid;
     end
 end
 
@@ -129,12 +129,12 @@ alu alu4cpu
 always @(posedge clk)
 begin
     if (resetn) begin
-        exe_pc                       <= 0;
-        exe_inst                     <= 0;
+        exe_pc <= 0;
+        exe_inst <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
-	exe_pc                           <= de_pc;
-	exe_inst                         <= de_inst;
+	exe_pc <= de_pc;
+	exe_inst <= de_inst;
 	end
 end
 //`endif
