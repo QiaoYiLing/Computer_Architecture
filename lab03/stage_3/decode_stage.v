@@ -89,7 +89,10 @@ module decode_stage(
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
     
-   
+wire [31:0] de_tempsrc1;
+wire [31:0] de_tempsrc2;
+wire [1 :0] de_forward_control1;
+wire [1 :0] de_forward_control2;
 wire [31:0 ] Instruction = fe_inst;
 wire [5 :0 ] op_code = Instruction[31:26];
 wire [4 :0 ] shamt = Instruction[10:6];
@@ -163,18 +166,18 @@ wire         de_pc_zero;
 wire [31:0 ] de_pc_slt;
 assign         de_br_is_br  = (inst_bne && !de_pc_zero) || 
                               (inst_beq && de_pc_zero) ||
-                              (inst_bgez && !de_rf_rdata1[31]) ||
-                              (inst_bgtz && !de_rf_rdata1[31] && |de_rf_rdata1) ||
-                              (inst_blez && !(!de_rf_rdata1[31] && |de_rf_rdata1)) ||
-                              (inst_bltz && de_rf_rdata1[31]) ||
-                              (inst_bgezal && !de_rf_rdata1[31]) ||
-                              (inst_bltzal && de_rf_rdata1[31]);
+                              (inst_bgez && !de_tempsrc1[31]) ||
+                              (inst_bgtz && !de_tempsrc1[31] && |de_tempsrc1) ||
+                              (inst_blez && !(!de_tempsrc1[31] && |de_tempsrc1)) ||
+                              (inst_bltz && de_tempsrc1[31]) ||
+                              (inst_bgezal && !de_tempsrc1[31]) ||
+                              (inst_bltzal && de_tempsrc1[31]);
 assign         de_br_is_j   = inst_j || inst_jal;
 assign         de_br_is_jr  = inst_jr || inst_jalr;
 assign         de_br_taken  = de_br_is_br || de_br_is_j || de_br_is_jr;
 assign         de_br_offset = Instruction[15:0];
 assign         de_br_index  = Instruction[25:0];
-assign         de_br_target = de_rf_rdata1;
+assign         de_br_target = de_tempsrc1;
 //de
 wire RegDst = r_type;   
 wire use_sign_extend_imme = inst_addiu|inst_addi|inst_lui|inst_lw|inst_sw|inst_beq|inst_bne|inst_slti|inst_sltiu;
@@ -185,15 +188,11 @@ wire save_ra   = inst_jal|inst_bgezal|inst_bltzal;
 assign de_dest = r_type ? Instruction[15:11] : 
                  save_ra ? 31 :
                  Instruction[20:16];
-assign de_st_value = (save_ra||inst_jalr) ? fe_pc+4 : de_rf_rdata2;
+assign de_st_value = (save_ra||inst_jalr) ? fe_pc+4 : de_tempsrc2;
 //forward
-wire [31:0] de_tempsrc1;
-wire [31:0] de_tempsrc2;
-wire [1 :0] de_forward_control1;
-wire [1 :0] de_forward_control2;
 assign de_forward_control1 = (exe_valid && exe_RegWrite && (|exe_dest) && exe_dest==de_rf_raddr1) ? 2:
                              (mem_valid && mem_RegWrite && (|mem_dest) && mem_dest==de_rf_raddr1) ? 1:
-                             (wb_valid  && wb_RegWrite  && (|mem_dest) && mem_dest==de_rf_raddr1) ? 3:
+                             (wb_valid  && wb_RegWrite  && (|mem_dest) && wb_dest==de_rf_raddr1) ? 3:
                              0;
 assign de_forward_control2 = (exe_valid && exe_RegWrite && (|exe_dest) && exe_dest==de_rf_raddr2) ? 2:
                              (mem_valid && mem_RegWrite && (|mem_dest) && mem_dest==de_rf_raddr2) ? 1:
@@ -258,8 +257,8 @@ end
 
 alu alu_pc_judge
 	(
-	.A       (de_rf_rdata1),
-	.B       (de_rf_rdata2),
+	.A       (de_tempsrc1),
+	.B       (de_tempsrc2),
 	.ALUop   (6           ),
 	.Zero    (de_pc_zero  ),
 	.Result  (de_pc_slt   )
