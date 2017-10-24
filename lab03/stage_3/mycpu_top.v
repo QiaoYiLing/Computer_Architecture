@@ -86,6 +86,16 @@ wire [ 4:0] wb_rf_waddr;
 wire [31:0] wb_rf_wdata;
 wire [31:0] de_rf_rdata1;
 wire [31:0] de_rf_rdata2;
+wire [63:0] mul_result;
+wire [31:0] mul_x;
+wire [31:0] mul_y;
+wire [31:0] exe_reg_hi;
+wire [31:0] exe_reg_lo;
+wire [31:0] mem_reg_hi;
+wire [31:0] mem_reg_lo;
+
+
+wire [39:0] wb_out_op;
 
 
 `ifdef SIMU_DEBUG
@@ -117,9 +127,13 @@ wire        de_ready_go;
 wire        exe_ready_go;
 wire        mem_ready_go;
 wire        wb_ready_go;
+wire        exe_div_ing;
+wire        exe_div_ok;
 assign      fe_ready_go = 1;
-assign      de_ready_go = !(exe_valid&&exe_out_op[10]&&exe_out_op[0]&&(|exe_dest)&&(de_rf_raddr2==exe_dest||de_rf_raddr1==exe_dest)) ; //lw的数据相关需要阻塞一拍
-assign      exe_ready_go = 1;
+assign      de_ready_go = !(exe_valid&&exe_out_op[10]&&exe_out_op[0]&&(|exe_dest)&&(de_rf_raddr2==exe_dest||de_rf_raddr1==exe_dest)
+                           || (exe_valid&&(|exe_out_op[28:25])) || (mem_valid&&(|mem_out_op[28:25])) || (wb_valid&&(|wb_out_op[28:25]))
+                           ); //lw的数据相关需要阻塞一拍
+assign      exe_ready_go = !(exe_div_ing || exe_out_op[22:20] == 3'b110) || exe_div_ok;
 assign      mem_ready_go = 1;
 assign      wb_ready_go = 1;
 
@@ -132,7 +146,7 @@ assign inst_sram_wdata = 32'b0;
 
 nextpc_gen nextpc_gen
     (
-    .resetn         (~resetn         ), //I, 1
+    .resetn         (resetn         ), //I, 1
 
     .fe_pc          (fe_pc          ), //I, 32
     .fe_wen         (fe_wen         ), //I, 1
@@ -155,7 +169,7 @@ nextpc_gen nextpc_gen
 fetch_stage fe_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (~resetn         ), //I, 1
+    .resetn         (resetn         ), //I, 1
                                     
     .nextpc         (nextpc         ), //I, 32
                                     
@@ -177,7 +191,7 @@ fetch_stage fe_stage
 decode_stage de_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (~resetn         ), //I, 1
+    .resetn         (resetn         ), //I, 1
                                     
     .fe_inst        (fe_inst        ), //I, 32
     .fe_pc          (fe_pc          ), //I, 32
@@ -231,7 +245,7 @@ decode_stage de_stage
 execute_stage exe_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (~resetn         ), //I, 1
+    .resetn         (resetn         ), //I, 1
                                     
     .de_out_op      (de_out_op      ), //I, ??
     .de_dest        (de_dest        ), //I, 5 
@@ -242,11 +256,20 @@ execute_stage exe_stage
     .exe_out_op     (exe_out_op     ), //O, ??
     .exe_dest       (exe_dest       ), //O, 5
     .exe_value      (exe_value      ), //O, 32
+    
+    .exe_mul_x      (mul_x          ),
+    .exe_mul_y      (mul_y          ),
+
+    .exe_div_ing    (exe_div_ing    ), //O, 1
+    .exe_div_ok     (exe_div_ok     ), //O, 1
 
     .data_sram_en   (data_sram_en   ), //O, 1
     .data_sram_wen  (data_sram_wen  ), //O, 4
     .data_sram_addr (data_sram_addr), //O, 32
     .data_sram_wdata(data_sram_wdata),  //O, 32
+    
+    .exe_reg_hi     (exe_reg_hi     ),//O, 32
+    .exe_reg_lo     (exe_reg_lo     ),//O, 32
 
  // `ifdef SIMU_DEBUG
     .de_pc          (de_pc          ), //I, 32
@@ -267,13 +290,19 @@ execute_stage exe_stage
 memory_stage mem_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (~resetn         ), //I, 1
+    .resetn         (resetn         ), //I, 1
                                     
     .exe_out_op     (exe_out_op     ), //I, ??
     .exe_dest       (exe_dest       ), //I, 5
     .exe_value      (exe_value      ), //I, 32
                                     
     .data_sram_rdata(data_sram_rdata), //I, 32
+    
+    .mem_mul_result (mul_result     ), //I, 64
+    .exe_reg_hi     (exe_reg_hi     ),//I, 32
+    .exe_reg_lo     (exe_reg_lo     ),//I, 32
+    .mem_reg_hi     (mem_reg_hi     ),//O, 32
+    .mem_reg_lo     (mem_reg_lo     ),//O, 32
                                     
     .mem_out_op     (mem_out_op     ), //O, ??
     .mem_dest       (mem_dest       ), //O, 5
@@ -298,11 +327,14 @@ memory_stage mem_stage
 writeback_stage wb_stage
     (
     .clk            (clk            ), //I, 1
-    .resetn         (~resetn         ), //I, 1
+    .resetn         (resetn         ), //I, 1
                                     
     .mem_out_op     (mem_out_op     ), //I, ??
     .mem_dest       (mem_dest       ), //I, 5
     .mem_value      (mem_value      ), //I, 32
+    
+    .mem_reg_hi     (mem_reg_hi     ),//I, 32
+    .mem_reg_lo     (mem_reg_lo     ),//I, 32
                                     
     .wb_rf_wen      (wb_rf_wen      ), //O, 1
     .wb_rf_waddr    (wb_rf_waddr    ), //O, 5
@@ -314,18 +346,29 @@ writeback_stage wb_stage
     .wb_pc          (wb_pc          ),  //O, 32
 //  `endif
     
+    .wb_out_op      (wb_out_op      ), //O, ??
+
     .now_allowin    (wb_allowin     ), //O, 1
     .next_allowin   (1'b1           ), //I, 1
     .pre_to_now_valid (mem_to_wb_valid),  //O, 1
     .now_valid        (wb_valid),       //O, 1
     .now_ready_go      (fe_ready_go)       //I, 1
     );
+    
+mul uut (
+    .mul_clk         (clk), 
+    .resetn          (resetn), 
+    .mul_signed      (exe_out_op[24]), 
+    .x               (mul_x), 
+    .y               (mul_y), 
+    .result          (mul_result)
+);
 
 
 regfile_2r1w regfile
     (
     .clk    (clk            ), //I, 1
-    .resetn (~resetn        ), //I, 1
+    .resetn (resetn        ), //I, 1
 
     .ra1    (de_rf_raddr1   ), //I, 5
     .rd1    (de_rf_rdata1   ), //O, 32
@@ -337,7 +380,6 @@ regfile_2r1w regfile
     .wa1    (wb_rf_waddr    ), //I, 5
     .wd1    (wb_rf_wdata    )  //O, 32
     );
-
 
 `ifdef SIMU_DEBUG
 assign debug_wb_pc       = wb_pc;

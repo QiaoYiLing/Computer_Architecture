@@ -51,6 +51,9 @@ module execute_stage(
     output wire [ 3:0] data_sram_wen,
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata, 
+    
+    output wire [31:0] exe_reg_hi,
+    output wire [31:0] exe_reg_lo,
 
  // `ifdef SIMU_DEBUG
     input  wire [31:0] de_pc,           //pc @decode_stage
@@ -58,7 +61,12 @@ module execute_stage(
     output reg  [31:0] exe_pc,          //pc @execute_stage
     output reg  [31:0] exe_inst,        //instr code @execute_stage
  // `endif
-  
+    output wire [31:0] exe_mul_x,
+    output wire [31:0] exe_mul_y,
+    
+    output wire        exe_div_ing,
+    output wire        exe_div_ok,
+
     input  wire        next_allowin,
     output wire        now_allowin,
     input  wire        pre_to_now_valid,
@@ -76,6 +84,7 @@ assign now_allowin = !now_valid || now_ready_go && next_allowin;
 assign now_to_next_valid = now_valid && now_ready_go;
 //exe
 wire [31:0 ]  exe_alu_result;
+wire [31:0 ]  exe_alu_res2;
 wire [3 :0 ]  exe_alu_op = exe_op[22:19];
 //mem
 //assign  data_sram_en  = 1;
@@ -83,13 +92,19 @@ assign  data_sram_en  = exe_op[10] | data_sram_wen;
 assign  data_sram_wen = {4{exe_op[11]}};
 assign  data_sram_addr = exe_alu_result;
 assign  data_sram_wdata = exe_st_value;
+//Mul, Div
+wire exe_div_en= (exe_alu_op[3:1] == 3'b110);
+wire exe_div_sign = (exe_alu_op == 4'b1100);
 
-assign exe_out_op = exe_op;      
-assign exe_value = exe_op[12] ? exe_st_value : exe_alu_result;
+assign exe_out_op = exe_op;
+
+assign exe_value = exe_op[12]    ? exe_st_value   : 
+                   exe_alu_result;
+
 
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         exe_dest <= 0;
         exe_st_value <= 0;
         exe_vsrc1 <= 0;
@@ -107,7 +122,7 @@ end
 
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         now_valid <= 0;
     end
     else if (now_allowin) begin 
@@ -115,20 +130,37 @@ begin
     end
 end
 
+assign exe_mul_x = exe_vsrc1;
+assign exe_mul_y = exe_vsrc2;
 
 alu alu4cpu
 	(
 	.A       (exe_vsrc1),
 	.B       (exe_vsrc2),
 	.ALUop   (exe_alu_op   ),
-
 	.Result  (exe_alu_result)
     );
-    
+
+divider div4cpu
+(
+    .clk    (clk        ),
+    .resetn (resetn     ),
+    .div_en (exe_div_en ),
+    .sign_en(exe_div_sign),
+
+    .nume   (exe_vsrc1  ),
+    .deno   (exe_vsrc2  ),
+
+    .quot   (exe_reg_lo ),
+    .rema   (exe_reg_hi ),
+    .calc   (exe_div_ing),
+    .done   (exe_div_ok )
+    );
+  
 //`ifdef SIMU_DEBUG
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         exe_pc <= 0;
         exe_inst <= 0;
     end

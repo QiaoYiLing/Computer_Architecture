@@ -54,7 +54,7 @@ assign rd2 = heap[ra2];
 integer i;
 always @(posedge clk)
 begin
-    if(resetn) begin
+    if(~resetn) begin
     for (i=0;i<32;i=i+1) heap[i] <= 32'b0; //¸´Î»
     end
     heap[0] <= 32'b0;

@@ -42,6 +42,12 @@ module memory_stage(
                                         //value for the following stages
 
     input  wire [31:0] data_sram_rdata,
+    
+    input  wire [63:0] mem_mul_result,
+    input  wire [31:0] exe_reg_hi,
+    input  wire [31:0] exe_reg_lo,
+    output wire [31:0] mem_reg_hi,
+    output wire [31:0] mem_reg_lo,
 
     output wire [39:0] mem_out_op,      //control signals used in WB stage
     output reg  [ 4:0] mem_dest,        //reg num of dest operand
@@ -69,27 +75,35 @@ assign now_to_next_valid = now_valid && now_ready_go;
 
 reg  [39:0] mem_op;
 reg  [31:0] value;
+reg  [31:0] mem_hi;
+reg  [31:0] mem_lo;
 
+assign mem_reg_hi = mem_op[23] ? mem_mul_result[63:32] : mem_hi;
+assign mem_reg_lo = mem_op[23] ? mem_mul_result[31:0 ] : mem_lo;
 assign mem_out_op = mem_op;
 assign mem_value = mem_op[1] ? data_sram_rdata : value;
 
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         mem_op <= 0;
         value <=0;
         mem_dest <=0;
+        mem_hi <= 0;
+        mem_lo <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
         mem_op <= exe_out_op;
         value <= exe_value;
         mem_dest <= exe_dest;
+        mem_hi <= exe_reg_hi;
+        mem_lo <= exe_reg_lo;
     end
 end
 
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         now_valid <= 0;
     end
     else if (now_allowin) begin 
@@ -101,7 +115,7 @@ end
 //`ifdef SIMU_DEBUG
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         mem_pc <= 0;
         mem_inst <= 0;
     end

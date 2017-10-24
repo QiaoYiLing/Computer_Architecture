@@ -6,6 +6,7 @@ module alu(
 	output reg CarryOut,
 	output reg Zero,
 	output reg [31:0] Result
+	//	output reg done	//multiply and divide
 );
  
 reg [31:0] reswithsign;//有符号数运算的结果
@@ -14,6 +15,7 @@ reg sltres2;
 reg Cout;
 reg [31:0] negb;
 reg [30:0] negbs;
+reg signed [31:0] A_shift_signed;
 reg signed [31:0] B_shift_signed;
 
 always@(A or B or ALUop) 
@@ -45,7 +47,7 @@ begin
 	
 	4'b0011: //ALUop=0011,FUNCTION=Shift_Left
 	begin
-		Result = B << A; //B = rt, A = shamt
+		Result = B << A[4:0]; //B = rt, A = shamt
 		Overflow = 0; //无定义(?)
 		CarryOut = 0; //无定义(?)
 		Zero = (Result == 0); //无定义(?)
@@ -118,7 +120,7 @@ begin
     
     4'b1010: //ALUop=1010,FUNCTION=Shift_Right_Logical
     begin
-        Result = B >> A; 
+        Result = B >> A[4:0]; 
         Overflow = 0; //无定义(?)
         CarryOut = 0; //无定义(?)
         Zero = (Result == 0); //无定义(?)
@@ -127,12 +129,31 @@ begin
     4'b1011: //ALUop=1011,FUNCTION=Shift_Right_Arithmetic
     begin
         B_shift_signed = B;
-        Result = B_shift_signed >>> A;
+        Result = B_shift_signed >>> A[4:0];
         Overflow = 0; //无定义(?)
         CarryOut = 0; //无定义(?)
         Zero = (Result == 0); //无定义(?)
     end
 
+/*
+    4'b1110: //ALUop=1110,FUNCTION=Mult_signed
+    begin
+    	A_shift_signed = A;
+    	B_shift_signed = B;
+    	{Result,Result2} = A_shift_signed * B_shift_signed;
+    	Overflow = 0; //无定义(?)
+        CarryOut = 0; //无定义(?)
+        Zero = (Result == 0); //无定义(?)
+    end
+
+    4'b1111: //ALUop=1111,FUNCTION=Mult_unsigned
+    begin
+    	{Result,Result2} = A * B;
+    	Overflow = 0; //无定义(?)
+        CarryOut = 0; //无定义(?)
+        Zero = (Result == 0); //无定义(?)
+    end
+*/
     default:
 	begin
 		Overflow = 0;

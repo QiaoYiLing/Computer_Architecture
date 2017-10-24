@@ -39,16 +39,21 @@ module writeback_stage(
     input  wire [39:0] mem_out_op,      //control signals used in WB stage
     input  wire [ 4:0] mem_dest,        //reg num of dest operand
     input  wire [31:0] mem_value,       //mem_stage final result
+    
+    input  wire [31:0] mem_reg_hi,
+    input  wire [31:0] mem_reg_lo,
 
     output wire        wb_rf_wen,
     output wire [ 4:0] wb_rf_waddr,
     output wire [31:0] wb_rf_wdata, 
+    
 
  // `ifdef SIMU_DEBUG
     input  wire [31:0] mem_pc,          //pc @memory_stage
     input  wire [31:0] mem_inst,        //instr code @memory_stage
     output reg  [31:0] wb_pc,
  // `endif
+    output wire [39:0] wb_out_op,
   
     input  wire        next_allowin,
     output wire        now_allowin,
@@ -57,10 +62,15 @@ module writeback_stage(
     output reg         now_valid,
     input  wire        now_ready_go        
 );
+reg  [31:0] HI;
+reg  [31:0] LO;
 
 reg  [39:0] wb_op;
 reg  [ 4:0] wb_dest;
 reg  [31:0] wb_value;
+reg  [31:0] wb_hi;
+reg  [31:0] wb_lo;
+
 
 //pipe_line
 assign now_allowin = !now_valid || now_ready_go && next_allowin;
@@ -69,25 +79,42 @@ assign now_to_next_valid = now_valid && now_ready_go;
 assign wb_rf_wen = wb_op[0] && now_valid;
 
 assign wb_rf_waddr = wb_dest; 
-assign wb_rf_wdata = wb_value;
+assign wb_rf_wdata = wb_op[25] ? HI:
+                     wb_op[26] ? LO:
+                     wb_value;
+
+assign wb_out_op = wb_op;
 
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         wb_op <= 0;
         wb_value <=0;
         wb_dest <=0;
+        wb_lo <= 0;
+        wb_hi <= 0;
+        HI <= 0;
+        LO <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
         wb_op <= mem_out_op;
         wb_value <= mem_value;
         wb_dest <= mem_dest;
+        wb_hi <= mem_reg_hi;
+        wb_lo  <= mem_reg_lo;
+        HI <= wb_op[27] ? wb_value:
+              wb_op[29] ? wb_hi:
+              HI;
+        LO <= wb_op[28] ? wb_value:
+              wb_op[29] ? wb_lo:
+              LO;        
+
     end
 end
 
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         now_valid <= 0;
     end
     else if (now_allowin) begin 
@@ -100,7 +127,7 @@ end
 reg  [31:0] wb_inst;      
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         wb_pc <= 0;
         wb_inst <= 0;
     end

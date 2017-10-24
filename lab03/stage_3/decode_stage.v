@@ -76,7 +76,7 @@ module decode_stage(
     output reg  [31:0] de_pc,
     output      [31:0] de_inst,         //instr code @decode stage
 //  `endif
-  
+
     input  wire        next_allowin,
     output wire        now_allowin,
     input  wire        pre_to_now_valid,
@@ -101,8 +101,7 @@ wire [15:0 ] immediate = Instruction[15:0];
 wire [31:0 ] sign_extend = {{16{immediate[15]}},immediate};
 wire [31:0 ] zero_extend = {{16'b0},immediate};
 wire [4 :0 ] regf = Instruction[20:16];
-assign de_rf_raddr1 = Instruction[25:21];
-assign de_rf_raddr2 = Instruction[20:16];
+
     
 wire inst_addiu = (op_code==6'b001001                   );  //addiu
 wire inst_addu  = (op_code==6'b000000 && func==6'b100001);  //addu
@@ -146,6 +145,7 @@ wire inst_div   = (op_code==6'b000000 && func==6'b011010);  //div
 wire inst_divu  = (op_code==6'b000000 && func==6'b011011);  //divu
 wire inst_mult  = (op_code==6'b000000 && func==6'b011000);  //mult
 wire inst_multu = (op_code==6'b000000 && func==6'b011001);  //multu
+
 wire inst_mfhi  = (op_code==6'b000000 && func==6'b010000);  //mfhi
 wire inst_mflo  = (op_code==6'b000000 && func==6'b010010);  //mflo
 wire inst_mthi  = (op_code==6'b000000 && func==6'b010001);  //mthi
@@ -161,6 +161,10 @@ wire inst_jalr  = (op_code==6'b000000 && func==6'b001001);  //jalr
 
 //wire r_type     = inst_addu | inst_or | inst_slt | inst_sll | inst_sltu;
 wire r_type     = (op_code==6'b000000 && !inst_jr       );
+
+assign de_rf_raddr1 = Instruction[25:21];
+assign de_rf_raddr2 = Instruction[20:16];
+
 //judge_branch
 wire         de_pc_zero;
 wire [31:0 ] de_pc_slt;
@@ -190,9 +194,9 @@ assign de_dest = r_type ? Instruction[15:11] :
                  Instruction[20:16];
 assign de_st_value = (save_ra||inst_jalr) ? fe_pc+4 : de_tempsrc2;
 //forward
-assign de_forward_control1 = (exe_valid && exe_RegWrite && (|exe_dest) && exe_dest==de_rf_raddr1) ? 2:
-                             (mem_valid && mem_RegWrite && (|mem_dest) && mem_dest==de_rf_raddr1) ? 1:
-                             (wb_valid  && wb_RegWrite  && (|mem_dest) && wb_dest==de_rf_raddr1) ? 3:
+assign de_forward_control1 = (exe_valid && (exe_RegWrite||de_out_op[27]||de_out_op[28]) && (|exe_dest) && exe_dest==de_rf_raddr1) ? 2:
+                             (mem_valid && (mem_RegWrite||de_out_op[27]||de_out_op[28]) && (|mem_dest) && mem_dest==de_rf_raddr1) ? 1:
+                             (wb_valid  && (wb_RegWrite||de_out_op[27]||de_out_op[28])  && (|mem_dest) && wb_dest==de_rf_raddr1) ? 3:
                              0;
 assign de_forward_control2 = (exe_valid && exe_RegWrite && (|exe_dest) && exe_dest==de_rf_raddr2) ? 2:
                              (mem_valid && mem_RegWrite && (|mem_dest) && mem_dest==de_rf_raddr2) ? 1:
@@ -218,13 +222,17 @@ wire [3 :0 ] exe_alu_op   = (inst_addiu|inst_addu|inst_lw|inst_sw|inst_add|inst_
                             (inst_and|inst_andi)                                        ? 0 :   //and
                             (inst_nor)                                                  ? 8 :   //nor
                             (inst_xor|inst_xori)                                        ? 9 :   //xor
-                            (inst_or|inst_ori)                                          ? 1 :   //or
+                            (inst_or|inst_ori|inst_mthi|inst_mtlo)                      ? 1 :   //or
                             (inst_slt|inst_slti)                                        ? 7 :   //slt_signed
                             (inst_sll|inst_sllv)                                        ? 3 :   //shift_left
                             (inst_srl|inst_srlv)                                        ? 10:   //shift_right_logical
                             (inst_sra|inst_srav)                                        ? 11:   //shift_right_arithmetic
                             (inst_sltiu|inst_sltu)                                      ? 5 :   //slt_unsigned
                             (inst_lui)                                                  ? 4 :   //lui
+                            (inst_div)                                                  ? 12:   //divide_signed
+                            (inst_divu)                                                 ? 13:   //divide_unsigned
+                            (inst_mult)                                                 ? 14:   //multiply_signed
+                            (inst_multu)                                                ? 15:   //multiply_unsigned
                             16;                                                                 //For debug
 //mem
 wire  mem_MemRead  = inst_lw;
@@ -232,13 +240,24 @@ wire  mem_MemWrite = inst_sw;
 
 //wb
 wire  de_RegWrite  = inst_addiu|inst_addi|r_type|inst_lw|inst_lui|inst_sll|inst_slti|inst_sltiu|save_ra|
-                     inst_ori|inst_andi|inst_xori;
+                     inst_ori|inst_andi|inst_xori|inst_mfhi|inst_mflo;
 wire  wb_MemtoReg  = inst_lw;
 //pass_op
+
+assign de_out_op[23]   = inst_mult|inst_multu;                               //乘法
+assign de_out_op[24]   = inst_mult;                                         //有符号乘法
+assign de_out_op[25]   = inst_mfhi;                                         //hi->reg
+assign de_out_op[26]   = inst_mflo;                                         //lo->reg
+assign de_out_op[27]   = inst_mthi;                                         //reg->hi
+assign de_out_op[28]   = inst_mtlo;                                         //reg->lo
+assign de_out_op[29]   = inst_mult|inst_multu|inst_div|inst_divu;           //lo hi 计算
+
 assign de_out_op[22:19] = exe_alu_op;
+
 assign de_out_op[10] = mem_MemRead;
 assign de_out_op[11] = mem_MemWrite;
-assign de_out_op[12]= save_ra || inst_jalr;
+assign de_out_op[12] = save_ra || inst_jalr;
+
 assign de_out_op[0] = de_RegWrite;
 assign de_out_op[1] = wb_MemtoReg;
 
@@ -246,7 +265,7 @@ assign de_out_op[1] = wb_MemtoReg;
 
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         now_valid <= 0;
     end
     else if (now_allowin) begin 
@@ -256,24 +275,24 @@ end
 
 
 alu alu_pc_judge
-	(
-	.A       (de_tempsrc1),
-	.B       (de_tempsrc2),
-	.ALUop   (6           ),
-	.Zero    (de_pc_zero  ),
-	.Result  (de_pc_slt   )
+  (
+  .A       (de_tempsrc1),
+  .B       (de_tempsrc2),
+  .ALUop   (6           ),
+  .Zero    (de_pc_zero  ),
+  .Result  (de_pc_slt   )
     );
 
 //`ifdef SIMU_DEBUG  
 assign de_inst = fe_inst;
 always @(posedge clk)
 begin
-    if (resetn) begin
+    if (!resetn) begin
         de_pc <= 0;
     end
     else if (pre_to_now_valid && now_allowin) begin 
-	    de_pc   <= fe_pc;
-	end
+      de_pc   <= fe_pc;
+  end
 end
 //`endif
 
